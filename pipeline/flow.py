@@ -11,7 +11,7 @@ Cada hora el workflow revisa las carpetas "NNN - Título". Cuando una tiene vide
 unos minutos sin cambios (para no agarrarla a medio subir):
   1. Descarga el video (o los clips, si subiste varios: se unen en orden por nombre).
   2. Le pone el texto gancho de la historia NNN (ideas/flow/NNN-*.json).
-  3. Lo manda a TikTok como borrador y te avisa con el caption.
+  3. Te lo manda por Telegram (y/o a TikTok como borrador) y te avisa con el caption.
   4. Renombra la carpeta: "✅ 001 - …" si salió bien, "⚠️ 001 - …" o "❌ 001 - …" si no.
      Para reintentar, quítale el ⚠️/❌ al nombre de la carpeta.
 
@@ -36,6 +36,7 @@ from .drive import CARPETA, Drive, es_video
 
 CARPETA_FLOW = RAIZ / "ideas" / "flow"
 REGISTRO = RAIZ / "ideas" / "flow_procesadas.json"
+ENTREGADOS = {"borrador_en_tiktok", "enviado_por_telegram"}
 PATRON = re.compile(r"^\s*(\d{3})\s*-")
 
 
@@ -79,9 +80,9 @@ def buscar_listas(drive: Drive, raiz_id: str, minutos_espera: int,
         if not videos:
             continue
         previo = registro.get(item["id"])
-        if previo and previo.get("estado") == "borrador_en_tiktok" and \
+        if previo and previo.get("estado") in ENTREGADOS and \
                 sorted(previo.get("videos", [])) == sorted(v["id"] for v in videos):
-            # Ya se mandó a TikTok pero no se pudo renombrar la carpeta: no la repetimos.
+            # Ya se entregó pero no se pudo renombrar la carpeta: no la repetimos.
             log(f"'{item['name']}' ya se procesó antes; se omite.")
             continue
         ultimo = max(_fecha(v.get("modifiedTime") or v["createdTime"]) for v in videos)
@@ -185,27 +186,25 @@ def main(argv: list[str]) -> int:
         avisos.append(f"Dura {duracion:.0f} s: el programa de Recompensas de TikTok pide más de 1 minuto.")
     escribir_salida_github("video", str(video.relative_to(CARPETA_SALIDA.parent)))
 
-    # 2) TikTok ---------------------------------------------------------------------------
+    # 2) Entrega: borrador en TikTok y/o Telegram ------------------------------------------
     subir = bool(cfg.get("tiktok", {}).get("subir", True))
-    r = publicar.ResultadoTikTok()
-    if subir:
-        r = publicar.subir_a_tiktok(video, CARPETA_SALIDA,
-                                    int(cfg.get("tiktok", {}).get("segundos_espera_estado", 300)))
-    ok = subir and not r.error
-    estado = "borrador_en_tiktok" if ok else ("generado" if not subir else "generado_sin_subir")
+    entrega = publicar.entregar(video, idea, titulo, CARPETA_SALIDA, cfg, subir)
+    ok = entrega.entregado
+    tk = entrega.tiktok
 
     # 3) Registro y carpeta de Drive ------------------------------------------------------
     registro = _leer_registro()
     registro[p.carpeta["id"]] = {
-        "carpeta": nombre, "historia": idea["id"], "estado": estado,
+        "carpeta": nombre, "historia": idea["id"], "estado": entrega.estado,
         "videos": [v["id"] for v in p.videos],
         "fecha": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     _guardar_registro(registro)
     if ruta is not None and ok:
-        ideas.marcar_hecha(ruta, idea, estado, {
+        ideas.marcar_hecha(ruta, idea, entrega.estado, {
             "modo": "flow", "carpeta_drive": nombre, "segundos": round(duracion, 1),
-            "publish_id": r.publish_id, "estado_tiktok": r.estado, "ejecucion": url})
+            "publish_id": tk.publish_id if tk else None, "estado_tiktok": tk.estado if tk else None,
+            "telegram": entrega.telegram_ok if entrega.telegram else None, "ejecucion": url})
 
     err_nombre = _renombrar_seguro(drive, p.carpeta, f"{'✅' if ok else '⚠️'} {nombre}")
     if err_nombre:
@@ -213,29 +212,16 @@ def main(argv: list[str]) -> int:
 
     # 4) Aviso ----------------------------------------------------------------------------
     datos = f"**Historia:** {titulo}  \n**Origen:** Flow (Drive: `{nombre}`) · **Duración:** {duracion:.0f} s"
-    extra = "".join(f"\n> ⚠️ {a}" for a in avisos)
+    datos += "".join(f"\n> ⚠️ {a}" for a in avisos)
+    reintento = (f"\n\nLa carpeta quedó como `⚠️ {nombre}`. Para reintentar la entrega, quítale el ⚠️ al nombre."
+                 if not ok else "")
     descarga = f"\n\n📥 Video descargable 7 días (sección *Artifacts*): {url}" if url else ""
     pendientes = sum(1 for _ in CARPETA_FLOW.glob("*.json"))
     resto = f"\n\n🗂️ Historias para Flow que siguen pendientes: **{pendientes}**"
-
-    if not subir:
-        publicar.escribir_aviso(CARPETA_SALIDA, f"🎬 Video de Flow listo: {titulo}",
-                                f"{datos}{extra}\n\nNo se subió a TikTok (subida desactivada).\n\n"
-                                f"Caption:\n{publicar.bloque_caption(idea)}{descarga}{resto}")
-        return 0
-    if r.error:
-        publicar.escribir_aviso(
-            CARPETA_SALIDA, f"⚠️ Video de Flow listo pero no llegó a TikTok: {titulo}",
-            f"{datos}{extra}\n\n**Error de TikTok:** {r.error}\n\nLa carpeta quedó como `⚠️ {nombre}`. "
-            "Para reintentar, quítale el ⚠️ al nombre. O descarga el video y súbelo a mano con este caption:\n"
-            f"{publicar.bloque_caption(idea)}{descarga}{resto}")
-        return 1
-    publicar.escribir_aviso(
-        CARPETA_SALIDA, f"🎬 Borrador listo en TikTok: {titulo}",
-        f"{datos}{extra}\n\n{publicar.instrucciones_publicar(idea)}"
-        f"\nEstado reportado por TikTok: `{r.estado}`{descarga}{resto}")
-    return 0
-
+    titulo_aviso, cuerpo, codigo = publicar.aviso_de_entrega(
+        entrega, idea, titulo, datos, f"{reintento}{descarga}{resto}")
+    publicar.escribir_aviso(CARPETA_SALIDA, titulo_aviso, cuerpo)
+    return codigo
 
 if __name__ == "__main__":
     try:

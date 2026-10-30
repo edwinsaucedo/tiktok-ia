@@ -133,6 +133,8 @@ class TestFlow(unittest.TestCase):
         self.cfg = cargar_config()
         self.cfg["flow"]["carpeta_drive_id"] = "RAIZ"
         self.cfg["flow"]["resolucion"] = "720p"  # más rápido en pruebas
+        self.cfg["tiktok"]["subir"] = True
+        self.cfg["telegram"]["activo"] = False
         self.d = DriveFalso()
         _TikTokFalso.estado = {}
         self.parches = [
@@ -220,6 +222,37 @@ class TestFlow(unittest.TestCase):
         os.environ["TIKTOK_REFRESH_TOKEN"] = "rft.viejo"
         self.assertEqual(flow.main([]), 0)
         self.assertEqual(self.d.renombrados[-1], ("F1", "✅ 001 - El anillo"))
+
+    def test_entrega_por_telegram_marca_lista_y_no_repite(self):
+        from pipeline import telegram
+        self.cfg["tiktok"]["subir"] = False
+        self.cfg["telegram"]["activo"] = True
+        self.d.falla_renombrar = True   # aunque no se pueda renombrar, no se manda dos veces
+        self.d.carpeta("RAIZ", "F1", "001 - El anillo")
+        self.d.archivo("F1", "V1", "video.mp4", self.vertical)
+        enviados = []
+        with mock.patch.object(telegram, "enviar",
+                               lambda v, t, c: enviados.append((v, t, c)) or telegram.ResultadoTelegram(True)):
+            self.assertEqual(flow.main([]), 0)
+        self.assertEqual(enviados[0][1:], ("El anillo", "Caption del anillo #novela"))
+        self.assertNotIn("init", _TikTokFalso.estado)
+        hecha = json.loads((self.hechas / "001-anillo.json").read_text())
+        self.assertEqual(hecha["resultado"]["estado"], "enviado_por_telegram")
+        self.assertIn("Video listo en Telegram", (self.salida / "aviso_titulo.txt").read_text())
+        self.assertEqual(flow.buscar_listas(drive_mod.Drive(sesion=self.d), "RAIZ", 10), [])
+
+    def test_telegram_falla_queda_advertencia(self):
+        self.cfg["tiktok"]["subir"] = False
+        self.cfg["telegram"]["activo"] = True
+        self.d.carpeta("RAIZ", "F1", "001 - El anillo")
+        self.d.archivo("F1", "V1", "video.mp4", self.vertical)
+        with mock.patch.dict(os.environ, {"TELEGRAM_BOT_TOKEN": ""}):
+            self.assertEqual(flow.main([]), 1)
+        self.assertEqual(self.d.renombrados, [("F1", "⚠️ 001 - El anillo")])
+        aviso = (self.salida / "aviso.md").read_text()
+        self.assertIn("TELEGRAM_BOT_TOKEN", aviso)
+        self.assertIn("quítale el ⚠️", aviso)
+        self.assertEqual(len(list(self.flow_dir.glob("*.json"))), 1)
 
     def test_historia_desconocida_se_sube_igual_con_aviso(self):
         self.d.carpeta("RAIZ", "F9", "009 - Mi propia historia")

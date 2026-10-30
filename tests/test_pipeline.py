@@ -109,6 +109,9 @@ class _Base(unittest.TestCase):
         self.cfg = cargar_config()
         self.cfg["video"]["max_clips_por_video"] = 2
         self.cfg["modo_automatico"]["activo"] = True
+        # Estas pruebas cubren la subida a TikTok; Telegram tiene las suyas en test_telegram.py
+        self.cfg["tiktok"]["subir"] = True
+        self.cfg["telegram"]["activo"] = False
         self.parches = [
             mock.patch.object(ideas, "CARPETA_COLA", self.cola),
             mock.patch.object(ideas, "CARPETA_HECHAS", self.hechas),

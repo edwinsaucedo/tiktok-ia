@@ -25,8 +25,9 @@ jobs:
         env:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         run: |
-          if [ -n "$GCP_SA_KEY" ] && [ -n "$TIKTOK_REFRESH_TOKEN" ]; then
+          if [ -n "$GCP_SA_KEY" ] && { [ -n "$TIKTOK_REFRESH_TOKEN" ] || [ -n "$TELEGRAM_BOT_TOKEN" ]; }; then
             echo "listo=true" >> "$GITHUB_OUTPUT"
           else
             echo "listo=false" >> "$GITHUB_OUTPUT"
@@ -66,13 +67,15 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg fonts-dejavu-core
 
-      - name: Procesar el video y mandarlo a TikTok
+      - name: Procesar el video y mandártelo (Telegram / TikTok)
         id: pipeline
         if: ${{ steps.revisar.outputs.hay_trabajo == '1' }}
         env:
           TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python -m pipeline.flow
 
       - name: Guardar el nuevo refresh token de TikTok
@@ -87,6 +90,19 @@ jobs:
             echo "Refresh token actualizado."
           fi
           rm -f salida/nuevo_refresh_token.txt
+
+      - name: Guardar el chat de Telegram
+        if: ${{ always() && hashFiles('salida/nuevo_telegram_chat_id.txt') != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::Encontré tu chat de Telegram pero no hay secreto GH_PAT para guardarlo. Revisa el paso 4 del README."
+          else
+            gh secret set TELEGRAM_CHAT_ID --repo "$GITHUB_REPOSITORY" < salida/nuevo_telegram_chat_id.txt
+            echo "Chat de Telegram guardado."
+          fi
+          rm -f salida/nuevo_telegram_chat_id.txt
 
       - name: Guardar el video (descargable 7 días)
         if: ${{ always() && steps.pipeline.outputs.video != '' }}

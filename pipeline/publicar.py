@@ -51,6 +51,82 @@ def instrucciones_publicar(idea: dict) -> str:
             "4. Publica.\n")
 
 
+@dataclass
+class Entrega:
+    """Resultado de entregar el video: borrador en TikTok y/o mensaje en Telegram."""
+    tiktok: ResultadoTikTok | None = None
+    telegram: "telegram.ResultadoTelegram | None" = None
+
+    @property
+    def tiktok_ok(self) -> bool:
+        return self.tiktok is not None and not self.tiktok.error
+
+    @property
+    def telegram_ok(self) -> bool:
+        return self.telegram is not None and self.telegram.enviado
+
+    @property
+    def entregado(self) -> bool:
+        return self.tiktok_ok or self.telegram_ok
+
+    @property
+    def intentado(self) -> bool:
+        return self.tiktok is not None or self.telegram is not None
+
+    @property
+    def estado(self) -> str:
+        if self.tiktok_ok:
+            return "borrador_en_tiktok"
+        if self.telegram_ok:
+            return "enviado_por_telegram"
+        return "generado_sin_subir" if self.intentado else "generado"
+
+
+def entregar(video: Path, idea: dict, titulo: str, salida: Path, cfg: dict,
+             subir_tiktok: bool) -> Entrega:
+    """Manda el video por los canales activos. Nunca lanza excepción."""
+    from . import telegram
+
+    e = Entrega()
+    if subir_tiktok:
+        e.tiktok = subir_a_tiktok(video, salida, int(cfg.get("tiktok", {}).get("segundos_espera_estado", 300)))
+    if cfg.get("telegram", {}).get("activo", False):
+        e.telegram = telegram.enviar(video, titulo, idea.get("caption", ""))
+        if e.telegram.chat_id_nuevo:
+            (salida / "nuevo_telegram_chat_id.txt").write_text(e.telegram.chat_id_nuevo)
+    return e
+
+
+def aviso_de_entrega(e: Entrega, idea: dict, titulo: str, datos: str, pie: str,
+                     prefijo: str = "") -> tuple[str, str, int]:
+    """Arma (título, cuerpo, código de salida) del aviso según cómo se entregó el video."""
+    lineas = []
+    if e.tiktok is not None:
+        lineas.append(f"📥 TikTok: borrador enviado (estado `{e.tiktok.estado}`)." if e.tiktok_ok
+                      else f"⚠️ **TikTok:** {e.tiktok.error}")
+    if e.telegram is not None:
+        lineas.append("📲 Telegram: te mandé el video y el caption." if e.telegram_ok
+                      else f"⚠️ **Telegram:** {e.telegram.error}")
+    canales = ("\n\n" + "\n\n".join(lineas)) if lineas else ""
+
+    if e.tiktok_ok:
+        return (f"{prefijo}🎬 Borrador listo en TikTok: {titulo}",
+                f"{datos}{canales}\n\n{instrucciones_publicar(idea)}{pie}", 0)
+    if e.telegram_ok:
+        return (f"{prefijo}📲 Video listo en Telegram: {titulo}",
+                f"{datos}{canales}\n\n### Para publicarlo\n"
+                "Abre el chat de tu bot en Telegram: guarda el video, súbelo en TikTok, pega el caption "
+                "(está en el mensaje, tócalo para copiarlo) y activa **Contenido generado por IA**.\n\n"
+                f"Caption:\n{bloque_caption(idea)}{pie}", 0)
+    if e.intentado:
+        return (f"{prefijo}⚠️ Video listo pero no se pudo entregar: {titulo}",
+                f"{datos}{canales}\n\nDescarga el video desde el link de abajo y súbelo a mano con este "
+                f"caption:\n{bloque_caption(idea)}{pie}", 1)
+    return (f"{prefijo}🎬 Video generado: {titulo}",
+            f"{datos}\n\nNo hay canales de entrega activos (TikTok y Telegram apagados).\n\n"
+            f"Caption:\n{bloque_caption(idea)}{pie}", 0)
+
+
 def subir_a_tiktok(video: Path, salida: Path, segundos_espera: int = 300) -> ResultadoTikTok:
     """Renueva el token, sube el video como borrador y espera a que llegue a la bandeja.
     Nunca lanza excepción: el error queda en ResultadoTikTok.error."""

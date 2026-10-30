@@ -1,6 +1,6 @@
 # TikTok IA – mini-novelas de 1 minuto
 
-Historias dramáticas tipo telenovela de **1 minuto** (8 partes de 8 segundos: planteamiento, conflicto y giro final), con diálogo en español de México, que llegan a tu TikTok como **borrador** con el caption listo.
+Historias dramáticas tipo telenovela de **1 minuto** (8 partes de 8 segundos: planteamiento, conflicto y giro final), con diálogo en español de México, que te llegan **por Telegram** listas para subir a TikTok, con el caption para copiar con un toque.
 
 El sistema tiene dos modos que trabajan juntos:
 
@@ -12,7 +12,9 @@ El sistema tiene dos modos que trabajan juntos:
 | Costo extra | $0 | $0 (lo cubren los $10 USD/mes de créditos de Google Cloud de Gemini Pro) |
 | Workflow | `Videos de Flow desde Google Drive` (revisa cada hora) | `Video automático con Veo (3 al mes)` |
 
-Los dos modos terminan igual: texto gancho en pantalla los primeros 3 segundos → borrador en tu TikTok → *issue* en GitHub con el caption para copiar (te llega al correo y a la app de GitHub).
+Los dos modos terminan igual: texto gancho en pantalla los primeros 3 segundos → **el video y el caption te llegan por Telegram** → *issue* en GitHub con el resumen (te llega al correo y a la app de GitHub).
+
+> **Por qué Telegram y no directo a TikTok:** con la app de TikTok en *sandbox*, los borradores se envían bien (`SEND_TO_USER_INBOX`) pero la notificación no aparece en la app. Mientras TikTok no apruebe la app (ver *Revisión de TikTok*), la subida directa queda apagada (`tiktok.subir: false`) y todo llega por Telegram. Cuando la aprueben, la vuelves a prender y puedes usar las dos.
 
 ---
 
@@ -33,9 +35,9 @@ TikTok IA/
 2. En Flow: proyecto nuevo, formato **9:16**, **1 resultado por prompt**. Genera la Parte 1 y luego **Extend** con las Partes 2 a 8 (así los personajes se mantienen iguales).
 3. **Scenebuilder** → revisa el orden → **Descargar**. Descarga antes de salir del proyecto: el Scenebuilder se borra al salir.
 4. Sube el video a **esa misma carpeta** de Drive (en el iPhone: app de Drive → + → Subir).
-5. En menos de 1 hora (revisa cada hora de 7 a. m. a 11 p. m.) el sistema le pone el gancho, lo manda a TikTok como borrador, te avisa con el caption y renombra la carpeta con ✅.
+5. En menos de 1 hora (revisa cada hora de 7 a. m. a 11 p. m.) el sistema le pone el gancho, **te lo manda por Telegram** con el caption, te avisa con un issue y renombra la carpeta con ✅.
 
-Si la carpeta queda con **⚠️** (no llegó a TikTok) o **❌** (archivo dañado), el issue te dice por qué; arréglalo y **quítale el símbolo al nombre** para reintentar. Si subes clips sueltos en vez del video completo, nómbralos `1`, `2`, `3`… y el sistema los une en ese orden. No cambies el número del inicio del nombre (001, 002…): así sabe qué historia es.
+Si la carpeta queda con **⚠️** (no se pudo entregar) o **❌** (archivo dañado), el issue te dice por qué; arréglalo y **quítale el símbolo al nombre** para reintentar. Si subes clips sueltos en vez del video completo, nómbralos `1`, `2`, `3`… y el sistema los une en ese orden. No cambies el número del inicio del nombre (001, 002…): así sabe qué historia es.
 
 ---
 
@@ -81,9 +83,9 @@ Si la carpeta queda con **⚠️** (no llegó a TikTok) o **❌** (archivo daña
 4. Si TikTok pide **verificar una URL** para Content Posting API, verifica `https://emstudiodigital.com/` (archivo en `public_html` de Hostinger o registro DNS TXT).
 5. Copia el **Client key** y **Client secret de la sandbox**.
 
-> La primera prueba (Paso 9) dirá si los borradores de sandbox se pueden publicar normalmente. Si no, usa el **Plan B** de abajo.
+> En sandbox TikTok acepta los borradores (`SEND_TO_USER_INBOX`) pero la notificación puede no aparecer en tu app. Por eso, por ahora, los videos te llegan por **Telegram** (Paso 5b) y la subida directa queda apagada hasta pasar la *Revisión de TikTok*.
 
-### Paso 4. Token de GitHub (lo usan "Conectar TikTok" y la renovación del acceso)
+### Paso 4. Token de GitHub (lo usan "Conectar TikTok", la renovación del acceso y Telegram)
 
 1. <https://github.com/settings/personal-access-tokens> → **Generate new token** (fine-grained).
 2. Nombre `tiktok-ia`, expiración **1 año**, *Only select repositories* → `tiktok-ia`.
@@ -101,8 +103,17 @@ Repositorio → **Settings** → **Secrets and variables** → **Actions** → *
 | `TIKTOK_CLIENT_KEY` | Client key de la sandbox (Paso 3.5) |
 | `TIKTOK_CLIENT_SECRET` | Client secret de la sandbox (Paso 3.5) |
 | `GH_PAT` | Token de GitHub (Paso 4) |
+| `TELEGRAM_BOT_TOKEN` | Token de tu bot de Telegram (Paso 5b) |
 
-`TIKTOK_REFRESH_TOKEN` no lo creas tú: lo guarda solo el Paso 6.
+`TIKTOK_REFRESH_TOKEN` y `TELEGRAM_CHAT_ID` no los creas tú: se guardan solos (Paso 6 y la primera entrega por Telegram).
+
+### Paso 5b. Tu bot de Telegram (aquí te llegan los videos)
+
+1. En Telegram busca **@BotFather** (con la palomita azul) → **Iniciar** → escribe `/newbot`.
+2. Nombre: el que quieras (ej. `Canaca Reels`). Usuario: debe terminar en `bot` (ej. `canacareels_bot`).
+3. BotFather te contesta con un **token** (algo como `7123456789:AAH…`). Guárdalo en GitHub como secreto **`TELEGRAM_BOT_TOKEN`**. No se lo pases a nadie.
+4. Toca el link de tu bot nuevo (`t.me/…_bot`) → **Iniciar** (manda `/start`).
+5. Listo. La primera vez que se entregue un video, el sistema encuentra tu chat y lo guarda como `TELEGRAM_CHAT_ID`. Si pasan más de 24 h entre el `/start` y la primera prueba, vuelve a mandarle `/start` antes.
 
 ### Paso 6. Conectar tu cuenta de TikTok (sin instalar nada)
 
@@ -124,21 +135,23 @@ En Google Drive → clic derecho en **TikTok IA** → **Compartir** → pega el 
 
 ### Paso 9. Pruebas
 
-1. **Prueba gratis de TikTok:** **Actions** → **Video automático con Veo (3 al mes)** → **Run workflow** → marca **Simular** → Run. En 2–3 min te llega a TikTok un borrador de barras de colores (bórralo) y un issue.
-2. **Prueba del modo Flow:** sube cualquier video corto vertical (uno de tu galería sirve) a la carpeta **`000 - Prueba`** de Drive, espera 10 minutos y corre **Actions** → **Videos de Flow desde Google Drive** → **Run workflow**. Debe llegarte el borrador a TikTok (bórralo), un issue avisando que la historia 000 no existe (es normal en la prueba) y la carpeta debe quedar como `✅ 000 - Prueba`.
+1. **Prueba gratis de entrega:** **Actions** → **Video automático con Veo (3 al mes)** → **Run workflow** → marca **Simular** → Run. En 2–3 min te llega por Telegram un video de barras de colores con su caption, y un issue.
+2. **Prueba del modo Flow:** sube cualquier video corto vertical (uno de tu galería sirve) a la carpeta **`000 - Prueba`** de Drive, espera 10 minutos y corre **Actions** → **Videos de Flow desde Google Drive** → **Run workflow**. Debe llegarte el video por Telegram, un issue avisando que la historia 000 no existe (es normal en la prueba) y la carpeta debe quedar como `✅ 000 - Prueba`.
 3. **Primer video automático real:** Run workflow del modo automático **sin** Simular (5–20 min, ~$3.20).
 
 ---
 
 ## Al publicar en TikTok
 
-1. Te llega un issue **"🎬 Borrador listo en TikTok: …"**.
-2. En TikTok abre la notificación de la **Bandeja de entrada** para terminar el borrador.
-3. Copia el caption del issue y pégalo.
-4. **Más opciones** → activa **Contenido generado por IA** (obligatorio en TikTok para video realista hecho con IA).
-5. Publica y cierra el issue.
+**Desde Telegram (lo normal):**
 
-TikTok permite **máximo 5 borradores pendientes**; si se juntan más, la subida falla hasta que publiques o borres alguno.
+1. Te llega a tu bot el video y un mensaje con el caption.
+2. Mantén presionado el video → **Guardar** (en Fotos o Galería).
+3. En TikTok toca **+** → elige el video.
+4. Toca el caption en Telegram (se copia solo) y pégalo como descripción.
+5. **Más opciones** → activa **Contenido generado por IA** (obligatorio en TikTok para video realista hecho con IA) → Publica. Cierra el issue.
+
+**Desde borrador de TikTok (cuando `tiktok.subir` esté en `true`):** abre la notificación de la **Bandeja de entrada** de TikTok, pega el caption del issue, activa *Contenido generado por IA* y publica. TikTok permite **máximo 5 borradores pendientes**; si se juntan más, la subida falla hasta que publiques o borres alguno.
 
 ## Las historias
 
@@ -177,16 +190,17 @@ Consejos: cada parte repite la descripción de los personajes (edad, ropa, cabel
 | `video.max_clips_por_video` | Escenas de 8 s (8 = 64 s) |
 | `video.continuidad` | Cada escena arranca del último cuadro de la anterior |
 | `presupuesto.tope_mensual_usd` | Tope de gasto estimado del modo automático |
-| `tiktok.subir` | `false` para solo generar sin mandar a TikTok |
+| `tiktok.subir` | `true` para mandar también el borrador a TikTok (apagado hasta que aprueben la app) |
+| `telegram.activo` | `true` para que te llegue el video y el caption por Telegram |
 
 Horarios: línea `cron` de cada workflow en `.github/workflows/` (en UTC: hora de CDMX + 6).
 
-## Plan B: si la sandbox no deja publicar los borradores
+## Revisión de TikTok (para que lleguen los borradores directo)
 
 1. Las páginas ya están publicadas: https://emstudiodigital.com/tiktok-ia/terminos.html y https://emstudiodigital.com/tiktok-ia/privacidad.html (archivos en `web/`).
 2. En la app (Production): ícono, descripción, categoría y esas dos URLs.
-3. Graba un video corto de pantalla del flujo (`tiktok_login.py`, autorizar, borrador llegando a TikTok).
-4. **Submit for review** (de varios días a 2 semanas). Al aprobarse, cambia `TIKTOK_CLIENT_KEY` y `TIKTOK_CLIENT_SECRET` por los **de producción** y corre otra vez **Conectar TikTok**.
+3. Graba un video corto de pantalla del flujo (guion en `docs/revision-tiktok.md`).
+4. **Submit for review** (de varios días a 2 semanas). Al aprobarse, cambia `TIKTOK_CLIENT_KEY` y `TIKTOK_CLIENT_SECRET` por los **de producción**, corre otra vez **Conectar TikTok** y pon `tiktok.subir: true` en `config.json`.
 
 ## Problemas comunes
 
@@ -196,6 +210,9 @@ Horarios: línea `cron` de cada workflow en `.github/workflows/` (en UTC: hora d
 | Subí el video y no pasa nada | Espera: toma videos con 10 min sin cambios y revisa cada hora de 7 a. m. a 11 p. m. O corre el workflow a mano |
 | `No se pudo renovar el acceso a TikTok (invalid_grant…)` | Corre otra vez el workflow **Conectar TikTok** (Paso 6) |
 | `spam_risk_too_many_pending_share` | Tienes 5 borradores sin publicar en TikTok |
+| `Telegram rechazó … Unauthorized` | El secreto `TELEGRAM_BOT_TOKEN` está mal: cópialo otra vez de @BotFather |
+| `No encontré tu chat` / `chat not found` | Abre tu bot en Telegram, mándale `/start` y corre el workflow otra vez |
+| `Encontré tu chat … no hay secreto GH_PAT` | Falta el Paso 4 (`GH_PAT`): sin él tu chat no se guarda y después de 24 h ya no lo encuentra |
 | `El video venía horizontal` | En Flow elige formato 9:16 antes de generar |
 | `PERMISSION_DENIED` de Vertex AI | Rol *Usuario de Vertex AI* en la cuenta de servicio y Vertex AI API habilitada |
 | No te deja crear la clave JSON | Tu cuenta bloquea claves; pídele a Claude cambiar a *Workload Identity Federation* |
@@ -211,4 +228,4 @@ pip install -r requirements.txt
 python -m unittest discover -s tests -v
 ```
 
-Sin internet: simulan Veo con ffmpeg, TikTok con un servidor local y Google Drive con un cliente falso.
+Sin internet: simulan Veo con ffmpeg, TikTok y Telegram con servidores locales y Google Drive con un cliente falso.

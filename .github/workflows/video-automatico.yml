@@ -12,7 +12,7 @@ on:
         type: boolean
         default: false
       subir_a_tiktok:
-        description: "Mandar el video a TikTok como borrador"
+        description: "Mandar el video a TikTok como borrador (solo si tiktok.subir está activo en config.json)"
         type: boolean
         default: true
 
@@ -37,9 +37,10 @@ jobs:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
           GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           EVENTO: ${{ github.event_name }}
         run: |
-          if [ "$EVENTO" = "workflow_dispatch" ] || { [ -n "$GCP_SA_KEY" ] && [ -n "$GCP_PROJECT" ] && [ -n "$TIKTOK_REFRESH_TOKEN" ]; }; then
+          if [ "$EVENTO" = "workflow_dispatch" ] || { [ -n "$GCP_SA_KEY" ] && [ -n "$GCP_PROJECT" ] && { [ -n "$TIKTOK_REFRESH_TOKEN" ] || [ -n "$TELEGRAM_BOT_TOKEN" ]; }; }; then
             echo "listo=true" >> "$GITHUB_OUTPUT"
           else
             echo "listo=false" >> "$GITHUB_OUTPUT"
@@ -76,13 +77,15 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Generar video y mandarlo a TikTok
+      - name: Generar video y mandártelo (Telegram / TikTok)
         id: pipeline
         env:
           GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
           TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SIMULAR: ${{ inputs.simular == true && '1' || '0' }}
           # En las ejecuciones programadas no hay inputs: siempre se sube.
           NO_SUBIR: ${{ github.event_name == 'workflow_dispatch' && inputs.subir_a_tiktok == false && '1' || '0' }}
@@ -100,6 +103,19 @@ jobs:
             echo "Refresh token actualizado."
           fi
           rm -f salida/nuevo_refresh_token.txt
+
+      - name: Guardar el chat de Telegram
+        if: ${{ always() && hashFiles('salida/nuevo_telegram_chat_id.txt') != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::Encontré tu chat de Telegram pero no hay secreto GH_PAT para guardarlo. Revisa el paso 4 del README."
+          else
+            gh secret set TELEGRAM_CHAT_ID --repo "$GITHUB_REPOSITORY" < salida/nuevo_telegram_chat_id.txt
+            echo "Chat de Telegram guardado."
+          fi
+          rm -f salida/nuevo_telegram_chat_id.txt
 
       - name: Guardar el video (descargable 7 días)
         if: ${{ always() && steps.pipeline.outputs.video != '' }}

@@ -115,24 +115,17 @@ def main() -> int:
     costo = None if simular else veo.costo_estimado(cfg, res.modelo, res.segundos)
     texto_costo = f"${costo:.2f} USD (estimado)" if costo is not None else "—"
 
-    # 3) TikTok -----------------------------------------------------------------------
-    publish_id, estado_tiktok, error_tiktok = None, None, None
-    if subir:
-        r = publicar.subir_a_tiktok(video, CARPETA_SALIDA,
-                                    int(cfg.get("tiktok", {}).get("segundos_espera_estado", 300)))
-        publish_id, estado_tiktok, error_tiktok = r.publish_id, r.estado, r.error
+    # 3) Entrega: borrador en TikTok y/o Telegram ----------------------------------------
+    entrega = publicar.entregar(video, idea, titulo, CARPETA_SALIDA, cfg, subir)
+    tk = entrega.tiktok
 
     # 4) Registro de la cola ------------------------------------------------------------
     if not simular and ruta is not None:
-        if not subir:
-            estado = "generado"
-        elif error_tiktok:
-            estado = "generado_sin_subir"
-        else:
-            estado = "borrador_en_tiktok"
-        ideas.marcar_hecha(ruta, idea, estado, {
+        ideas.marcar_hecha(ruta, idea, entrega.estado, {
             "modelo": res.modelo, "segundos": res.segundos, "costo_estimado_usd": costo,
-            "publish_id": publish_id, "estado_tiktok": estado_tiktok, "error_tiktok": error_tiktok,
+            "publish_id": tk.publish_id if tk else None, "estado_tiktok": tk.estado if tk else None,
+            "error_tiktok": tk.error if tk else None,
+            "telegram": entrega.telegram_ok if entrega.telegram else None,
             "ejecucion": url,
         })
 
@@ -140,30 +133,15 @@ def main() -> int:
     quedan = ideas.cuantas_en_cola()
     datos = (f"**Idea:** {titulo}  \n**Escenas:** {len(res.clips)} · **Duración:** {res.segundos} s · "
              f"**Modelo:** {res.modelo} · **Costo:** {texto_costo}")
-    extra = "".join(f"\n> ⚠️ {a}" for a in res.avisos)
+    datos += "".join(f"\n> ⚠️ {a}" for a in res.avisos)
     descarga = f"\n\n📥 Video descargable 7 días (sección *Artifacts*): {url}" if url else ""
     cola = f"\n\n🗂️ Ideas que quedan en la cola: **{quedan}**" + (
         " — pídele más a Claude." if quedan < 3 and not es_demo else "")
     prefijo = "[SIMULACIÓN] " if simular else ""
-
-    if not subir:
-        _escribir_aviso(f"{prefijo}🎬 Video generado: {titulo}",
-                        f"{datos}{extra}\n\nNo se subió a TikTok (subida desactivada).\n\n"
-                        f"Caption sugerido:\n{_bloque_caption(idea)}{descarga}{cola}")
-        return 0
-    if error_tiktok:
-        _escribir_aviso(
-            f"{prefijo}⚠️ Video listo pero no llegó a TikTok: {titulo}",
-            f"{datos}{extra}\n\n**Error de TikTok:** {error_tiktok}\n\n"
-            f"Puedes descargar el video y subirlo a mano con este caption:\n{_bloque_caption(idea)}"
-            f"{descarga}{cola}")
-        return 1
-
-    _escribir_aviso(
-        f"{prefijo}🎬 Borrador listo en TikTok: {titulo}",
-        f"{datos}{extra}\n\n{publicar.instrucciones_publicar(idea)}"
-        f"\nEstado reportado por TikTok: `{estado_tiktok}`{descarga}{cola}")
-    return 0
+    titulo_aviso, cuerpo, codigo = publicar.aviso_de_entrega(
+        entrega, idea, titulo, datos, f"{descarga}{cola}", prefijo)
+    _escribir_aviso(titulo_aviso, cuerpo)
+    return codigo
 
 
 if __name__ == "__main__":
