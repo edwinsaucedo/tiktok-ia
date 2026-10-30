@@ -1,189 +1,207 @@
-# TikTok IA – videos automáticos con Veo
+# TikTok IA – mini-novelas de 1 minuto
 
-Mini-novelas para TikTok: historias dramáticas de 24 segundos en 3 escenas (planteamiento, conflicto y giro final), con diálogo en español de México.
+Historias dramáticas tipo telenovela de **1 minuto** (8 partes de 8 segundos: planteamiento, conflicto y giro final), con diálogo en español de México, que llegan a tu TikTok como **borrador** con el caption listo.
 
-Este repositorio hace esto solo, **martes y viernes a las 9:17 a. m.** (hora del centro de México):
+El sistema tiene dos modos que trabajan juntos:
 
-1. Toma la siguiente historia de `ideas/cola/` (las escribe Claude cada semana).
-2. Genera las 3 escenas verticales 9:16 con **Veo 3.1** (el mismo modelo que usa Flow) en Google Cloud. La escena 2 arranca desde el último cuadro de la 1, y la 3 desde el último de la 2, para que los personajes y el lugar se vean iguales.
-3. Une las escenas y pone el texto gancho en pantalla los primeros 3 segundos.
-4. Lo manda a tu TikTok como **borrador**: te llega una notificación en la app.
-5. Te abre un *issue* en GitHub con el caption listo para copiar (te llega notificación al correo y a la app de GitHub).
+| | **Modo Flow** (principal) | **Modo automático** (extra) |
+|---|---|---|
+| Quién genera el video | Tú, en Google Flow, con el guion que te deja Claude | Google Cloud (Veo 3.1) solo |
+| Qué haces tú | Pegar 8 prompts en Flow, descargar y subir a Drive (~15–20 min) | Nada |
+| Cuántos al mes | ~6 con Veo 3.1 Fast, ~12 con Lite (1,000 créditos de Flow de tu Gemini Pro) | 3 (días 5, 15 y 25) |
+| Costo extra | $0 | $0 (lo cubren los $10 USD/mes de créditos de Google Cloud de Gemini Pro) |
+| Workflow | `Videos de Flow desde Google Drive` (revisa cada hora) | `Video automático con Veo (3 al mes)` |
 
-Tú solo abres TikTok, pegas el caption, activas la etiqueta de IA y publicas.
+Los dos modos terminan igual: texto gancho en pantalla los primeros 3 segundos → borrador en tu TikTok → *issue* en GitHub con el caption para copiar (te llega al correo y a la app de GitHub).
+
+---
+
+## Modo Flow: cómo se usa
+
+En tu Google Drive (cuenta **edwin8asaucedo@gmail.com**) está la carpeta **TikTok IA**:
+
+```
+TikTok IA/
+  LÉEME - Cómo usar esta carpeta
+  001 - El anillo equivocado/
+    Guion para Flow - 001 El anillo equivocado   ← los 8 prompts listos para copiar
+  002 - La herencia/
+  …
+```
+
+1. Abre la carpeta de una historia y su **Guion para Flow**.
+2. En Flow: proyecto nuevo, formato **9:16**, **1 resultado por prompt**. Genera la Parte 1 y luego **Extend** con las Partes 2 a 8 (así los personajes se mantienen iguales).
+3. **Scenebuilder** → revisa el orden → **Descargar**. Descarga antes de salir del proyecto: el Scenebuilder se borra al salir.
+4. Sube el video a **esa misma carpeta** de Drive (en el iPhone: app de Drive → + → Subir).
+5. En menos de 1 hora (revisa cada hora de 7 a. m. a 11 p. m.) el sistema le pone el gancho, lo manda a TikTok como borrador, te avisa con el caption y renombra la carpeta con ✅.
+
+Si la carpeta queda con **⚠️** (no llegó a TikTok) o **❌** (archivo dañado), el issue te dice por qué; arréglalo y **quítale el símbolo al nombre** para reintentar. Si subes clips sueltos en vez del video completo, nómbralos `1`, `2`, `3`… y el sistema los une en ese orden. No cambies el número del inicio del nombre (001, 002…): así sabe qué historia es.
 
 ---
 
 ## Cuánto cuesta
 
-Con la configuración inicial: **3 escenas de 8 s (24 s), Veo 3.1 Lite en 720p ($0.05 USD por segundo), martes y viernes.**
-
-| Configuración | Costo por video | Videos al mes | Costo al mes |
-|---|---|---|---|
-| **Inicial**: 3 escenas, Lite 720p, martes y viernes | $1.20 | 8 (el tope corta el 9.º) | **$9.60** (lo cubren tus $10 de AI Pro) |
-| 3 escenas, Lite 720p, lunes, miércoles y viernes | $1.20 | ~13 | ~$15.60 |
-| 3 escenas, Lite 1080p ($0.08/s), martes y viernes | $1.92 | ~9 | ~$16.70 |
-| 3 escenas, Fast 1080p ($0.12/s), martes y viernes | $2.88 | ~9 | ~$25.00 |
-| 8 escenas (64 s, mínimo para Recompensas), Lite 720p, martes y viernes | $3.20 | ~9 | ~$27.80 |
-
-Precios de referencia de la API de Veo 3.1; Google cobra lo que diga su página de precios. Además hay un **tope de $10 USD al mes** en `config.json` (`presupuesto.tope_mensual_usd`): si el siguiente video lo rebasa, no se genera y te avisa. GitHub Actions es gratis para este uso.
+- **Modo Flow:** usa los **1,000 créditos mensuales de Flow** que trae tu Gemini Pro. Según las tablas publicadas: Veo 3.1 Fast = 20 créditos por parte (160 por video → ~6 al mes); Veo 3.1 Lite = 10 por parte (80 por video → ~12 al mes). Confírmalo en Flow. El procesamiento en GitHub y la API de TikTok son gratis.
+- **Modo automático:** 8 escenas × 8 s × $0.05 USD (Veo 3.1 Lite 720p) = **$3.20 por video**; 3 al mes = **$9.60**, que cubren tus $10 de créditos de Google Cloud. Hay un **tope de $10 al mes** en `config.json`: si el siguiente video lo rebasa, no se genera y te avisa.
 
 ---
 
 ## Configuración (una sola vez, ~1 hora)
 
-### Paso 1. Google Cloud: créditos, proyecto y Vertex AI
+### Paso 1. Google Cloud: créditos, proyecto, Vertex AI y Drive
 
-1. **Activa tus créditos de Gemini Pro.** Entra a <https://developers.google.com/program> con la misma cuenta de Google donde pagas Gemini Pro → *Únete al programa* → en tu perfil, sección **Beneficios**, activa los **créditos de Google Cloud ($10 USD/mes)**. Te pedirá elegir o crear una **cuenta de facturación** (necesita tarjeta; los créditos se gastan primero).
-2. **Crea el proyecto.** En <https://console.cloud.google.com> → selector de proyectos (arriba) → **Proyecto nuevo** → nombre `tiktok-ia` → Crear. Anota el **ID del proyecto** (ej. `tiktok-ia-482913`); es el que va en el secreto `GCP_PROJECT`.
-3. **Liga la facturación.** Menú ☰ → **Facturación** → *Vincular una cuenta de facturación* → elige la cuenta donde quedaron los créditos.
-4. **Activa Vertex AI.** Menú ☰ → **APIs y servicios** → **Biblioteca** → busca **Vertex AI API** → **Habilitar**.
+1. **Activa tus créditos de Gemini Pro.** Entra a <https://developers.google.com/program> con la cuenta de Google donde pagas Gemini Pro → *Únete al programa* → en tu perfil, sección **Beneficios**, activa los **créditos de Google Cloud ($10 USD/mes)**. Te pedirá una **cuenta de facturación** (con tarjeta; los créditos se gastan primero).
+2. **Crea el proyecto.** <https://console.cloud.google.com> → selector de proyectos → **Proyecto nuevo** → nombre `tiktok-ia` → Crear. Anota el **ID del proyecto** (ej. `tiktok-ia-482913`).
+3. **Liga la facturación.** Menú ☰ → **Facturación** → vincula la cuenta donde quedaron los créditos.
+4. **Activa dos APIs.** Menú ☰ → **APIs y servicios** → **Biblioteca** → busca y **habilita** las dos: **Vertex AI API** y **Google Drive API**.
 5. **Crea la cuenta de servicio (el "robot" que usará GitHub).** Menú ☰ → **IAM y administración** → **Cuentas de servicio** → **Crear cuenta de servicio**:
    - Nombre: `tiktok-ia-bot` → Crear y continuar.
    - Rol: **Usuario de Vertex AI** (`Vertex AI User`) → Continuar → Listo.
-   - Abre la cuenta creada → pestaña **Claves** → **Agregar clave** → **Crear clave nueva** → **JSON** → se descarga un archivo `.json`. **No lo subas al repositorio**: su contenido va en el secreto `GCP_SA_KEY`.
-6. **Alerta de gasto (recomendado).** Facturación → **Presupuestos y alertas** → Crear presupuesto → $10 USD → alertas al 50 %, 90 % y 100 %. (La alerta avisa, no corta el servicio; el tope de `config.json` es el que frena.)
+   - **Copia su correo** (algo como `tiktok-ia-bot@tiktok-ia-482913.iam.gserviceaccount.com`): lo usas en el Paso 8.
+   - Abre la cuenta → pestaña **Claves** → **Agregar clave** → **Crear clave nueva** → **JSON** → se descarga un `.json`. **No lo subas al repositorio**: su contenido va en el secreto `GCP_SA_KEY`.
+6. **Alerta de gasto (recomendado).** Facturación → **Presupuestos y alertas** → $10 USD → alertas al 50 %, 90 % y 100 %.
 
 ### Paso 2. TikTok for Developers: tu app
 
-1. Entra a <https://developers.tiktok.com> e inicia sesión **con la misma cuenta de TikTok donde vas a publicar**.
-2. **Manage apps** → **Connect an app** → ponle nombre (ej. `Estudio IA`; no uses la palabra "TikTok" en el nombre).
+1. Entra a <https://developers.tiktok.com> **con la cuenta de TikTok donde vas a publicar**.
+2. **Manage apps** → **Connect an app** → nombre (ej. `Estudio IA`; sin la palabra "TikTok").
 3. En **Platforms** marca **Desktop**.
 4. **Products** → **Add products**:
-   - **Login Kit** → en *Desktop*, Redirect URI: `http://localhost:8765/callback/` (exactamente así, con la diagonal final).
+   - **Login Kit** → en *Desktop*, Redirect URI: `http://localhost:8765/callback/` (exactamente así).
    - **Content Posting API** → deja **Direct Post desactivado** (solo usamos borradores).
 5. Revisa que los **Scopes** sean `user.info.basic` y `video.upload`.
 
 ### Paso 3. Sandbox (para no esperar la revisión de TikTok)
 
-1. En la página de tu app, cambia de *Production* a **Sandbox** → **Create Sandbox** → nombre `pruebas`.
-2. En la sandbox repite el Paso 2.4 (Login Kit con el mismo Redirect URI + Content Posting API) y da **Apply changes**.
-3. **Sandbox settings** → **Target users** → **Add account** → inicia sesión con tu cuenta de TikTok y acepta. (Puede tardar hasta una hora en aparecer.)
-4. Si TikTok te pide **verificar una URL** para Content Posting API, verifica `https://emstudiodigital.com/` con la opción de archivo (lo subes a `public_html` en Hostinger) o con registro DNS TXT.
-5. Copia el **Client key** y **Client secret** **de la sandbox** (son distintos a los de producción).
+1. En tu app, cambia a **Sandbox** → **Create Sandbox** → nombre `pruebas`.
+2. En la sandbox repite el Paso 2.4 y da **Apply changes**.
+3. **Sandbox settings** → **Target users** → **Add account** → inicia sesión con tu TikTok y acepta (puede tardar hasta una hora en aparecer).
+4. Si TikTok pide **verificar una URL** para Content Posting API, verifica `https://emstudiodigital.com/` (archivo en `public_html` de Hostinger o registro DNS TXT).
+5. Copia el **Client key** y **Client secret de la sandbox**.
 
-> La sandbox sirve para usar la API sin enviar la app a revisión. La primera prueba (Paso 7) te dirá si los borradores de sandbox se pueden publicar normalmente en tu cuenta. Si no, usa el **Plan B** de abajo.
+> La primera prueba (Paso 9) dirá si los borradores de sandbox se pueden publicar normalmente. Si no, usa el **Plan B** de abajo.
 
 ### Paso 4. Conectar tu cuenta de TikTok (en tu computadora)
 
-1. Instala Python 3.12 desde <https://www.python.org/downloads/> (en el instalador marca **Add python.exe to PATH**).
-2. Descarga este repositorio: botón verde **Code** → **Download ZIP** → descomprímelo.
-3. Abre una terminal en esa carpeta (clic derecho → *Abrir en Terminal*) y corre:
+1. Instala Python 3.12 desde <https://www.python.org/downloads/> (marca **Add python.exe to PATH**).
+2. Descarga este repositorio: **Code** → **Download ZIP** → descomprímelo.
+3. En esa carpeta abre una terminal (clic derecho → *Abrir en Terminal*):
    ```
    py -m pip install requests
    py tools\tiktok_login.py
    ```
-4. Pega el Client key y el Client secret de la sandbox. Se abre el navegador → autoriza con tu cuenta de TikTok.
-5. La terminal te muestra el **refresh token**. Cópialo: va en el secreto `TIKTOK_REFRESH_TOKEN`. Dura 365 días y el sistema lo renueva solo.
+4. Pega el Client key y Client secret de la sandbox → autoriza en el navegador.
+5. Copia el **refresh token** que aparece: va en el secreto `TIKTOK_REFRESH_TOKEN` (dura 365 días y se renueva solo).
 
 ### Paso 5. Token de GitHub para renovar el acceso de TikTok
 
-TikTok a veces cambia el refresh token al renovarlo; el workflow necesita permiso para guardar el nuevo.
-
 1. <https://github.com/settings/personal-access-tokens> → **Generate new token** (fine-grained).
-2. Nombre `tiktok-ia`, expiración **1 año**, *Repository access* → **Only select repositories** → `tiktok-ia`.
-3. *Permissions* → *Repository permissions* → **Secrets: Read and write**.
-4. Genera y copia el token: va en el secreto `GH_PAT`. Pon un recordatorio para renovarlo en un año.
+2. Nombre `tiktok-ia`, expiración **1 año**, *Only select repositories* → `tiktok-ia`.
+3. *Repository permissions* → **Secrets: Read and write**.
+4. Copia el token: va en el secreto `GH_PAT`.
 
 ### Paso 6. Guardar los secretos en GitHub
 
-En el repositorio → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**, uno por uno:
+Repositorio → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**:
 
 | Secreto | Qué poner |
 |---|---|
 | `GCP_PROJECT` | ID del proyecto de Google Cloud (Paso 1.2) |
-| `GCP_SA_KEY` | Todo el contenido del archivo `.json` de la cuenta de servicio (Paso 1.5) |
+| `GCP_SA_KEY` | Todo el contenido del `.json` de la cuenta de servicio (Paso 1.5) |
 | `TIKTOK_CLIENT_KEY` | Client key de la sandbox (Paso 3.5) |
 | `TIKTOK_CLIENT_SECRET` | Client secret de la sandbox (Paso 3.5) |
-| `TIKTOK_REFRESH_TOKEN` | El refresh token (Paso 4.5) |
-| `GH_PAT` | El token de GitHub (Paso 5) |
+| `TIKTOK_REFRESH_TOKEN` | Refresh token (Paso 4.5) |
+| `GH_PAT` | Token de GitHub (Paso 5) |
 
-Después, en `config.json`, cambia `"tema_cuenta"` por el tema de tu cuenta (Claude lo usa para las ideas).
+### Paso 7. (Ya está hecho) Carpeta de Drive
 
-### Paso 7. Pruebas
+La carpeta **TikTok IA** ya existe en tu Drive y su ID ya está en `config.json` (`flow.carpeta_drive_id`).
 
-1. **Prueba gratis de TikTok:** pestaña **Actions** → **Video diario para TikTok** → **Run workflow** → marca **Simular** y deja marcado **Mandar a TikTok** → Run. En 2–3 minutos te llega a TikTok un borrador con barras de colores (bórralo) y un issue en GitHub.
-2. **Primer video real:** Run workflow **sin** marcar Simular. Tarda 5–15 minutos y gasta ~$1.20 USD.
-3. Listo: desde aquí corre solo martes y viernes.
+### Paso 8. Compartir la carpeta de Drive con el robot
+
+En Google Drive → clic derecho en **TikTok IA** → **Compartir** → pega el **correo de la cuenta de servicio** (Paso 1.5) → rol **Editor** → desmarca "Notificar" → **Compartir**. Sin esto el sistema no puede ver tus videos ni renombrar las carpetas.
+
+### Paso 9. Pruebas
+
+1. **Prueba gratis de TikTok:** **Actions** → **Video automático con Veo (3 al mes)** → **Run workflow** → marca **Simular** → Run. En 2–3 min te llega a TikTok un borrador de barras de colores (bórralo) y un issue.
+2. **Prueba del modo Flow:** sube cualquier video corto vertical (uno de tu galería sirve) a la carpeta **`000 - Prueba`** de Drive, espera 10 minutos y corre **Actions** → **Videos de Flow desde Google Drive** → **Run workflow**. Debe llegarte el borrador a TikTok (bórralo), un issue avisando que la historia 000 no existe (es normal en la prueba) y la carpeta debe quedar como `✅ 000 - Prueba`.
+3. **Primer video automático real:** Run workflow del modo automático **sin** Simular (5–20 min, ~$3.20).
 
 ---
 
-## Uso diario
+## Al publicar en TikTok
 
-1. Te llega un issue **"🎬 Borrador listo en TikTok: …"** (correo / app de GitHub).
-2. En TikTok, abre la notificación de la **Bandeja de entrada** para terminar el borrador.
+1. Te llega un issue **"🎬 Borrador listo en TikTok: …"**.
+2. En TikTok abre la notificación de la **Bandeja de entrada** para terminar el borrador.
 3. Copia el caption del issue y pégalo.
 4. **Más opciones** → activa **Contenido generado por IA** (obligatorio en TikTok para video realista hecho con IA).
 5. Publica y cierra el issue.
 
-TikTok permite **máximo 5 borradores pendientes**: si se juntan más, la subida falla hasta que publiques o borres alguno (el issue te lo dice y deja el video descargable).
+TikTok permite **máximo 5 borradores pendientes**; si se juntan más, la subida falla hasta que publiques o borres alguno.
 
-## Las ideas
+## Las historias
 
-- Cada idea es un archivo en `ideas/cola/` (se procesan en orden alfabético). Al usarse pasan a `ideas/hechas/` con el resultado.
-- Claude agrega ideas nuevas cada semana. También puedes pedirle en cualquier momento: *"agrega 5 ideas a la cola de tiktok-ia"*.
-- Si la cola se vacía, Gemini crea una idea de respaldo para no fallar (`ideas.respaldo_gemini` en `config.json`).
+- `ideas/flow/` → historias para el **modo Flow** (cada una tiene su carpeta y guion en Drive).
+- `ideas/cola/` → historias para el **modo automático**.
+- Al usarse pasan a `ideas/hechas/` con el resultado. `ideas/flow_procesadas.json` registra qué carpetas de Drive ya se subieron.
+- Para más historias pídele a Claude: *"agrega 5 historias para Flow en tiktok-ia"* (crea los archivos, las carpetas y los guiones en Drive).
+- Si la cola automática se vacía, Gemini crea una idea de respaldo (`ideas.respaldo_gemini`).
 
-Formato de una idea:
+Formato de una historia:
 
 ```json
 {
-  "id": "2026-11-03-a",
-  "titulo": "Título interno",
+  "id": "009-la-vecina",
+  "titulo": "Título",
   "gancho": "Texto en pantalla (máx. ~45 caracteres)",
   "estilo": "Visual style shared by all scenes, in English",
-  "escenas": [
-    "Escena 1 en inglés: personajes descritos completos, acción, cámara; diálogo entre comillas en español",
-    "Escena 2: continúa justo donde terminó la 1",
-    "Escena 3: el giro final"
-  ],
-  "caption": "Descripción para TikTok #hashtag1 #hashtag2",
-  "continuidad": true
+  "escenas": ["Parte 1 en inglés con personajes completos; diálogo entre comillas en español", "…8 partes…"],
+  "caption": "Descripción para TikTok #novela #drama",
+  "continuidad": true,
+  "resumen_partes": ["Qué pasa en la parte 1", "…"]
 }
 ```
 
-Consejos para que las historias salgan bien con Veo:
-- Cada escena repite la descripción de los personajes (edad, ropa, cabello) aunque ya salieran antes.
-- Con `"continuidad": true`, cada escena empieza en el último cuadro de la anterior: escribe la escena como continuación del mismo lugar y momento. Si la historia necesita un salto de lugar o tiempo, pon `"continuidad": false` en esa idea.
-- Diálogos cortos: máximo ~15 palabras por escena para que quepan en 8 segundos.
+Consejos: cada parte repite la descripción de los personajes (edad, ropa, cabello); todas pasan en el mismo lugar y continúan donde terminó la anterior; diálogos de máximo ~15 palabras por parte.
 
 ## Ajustes (`config.json`)
 
 | Ajuste | Para qué |
 |---|---|
-| `tema_cuenta` | Tema de tu cuenta (lo usan las ideas) |
-| `video.modelos` | Orden de modelos de Veo; si el primero no está disponible, usa el siguiente |
-| `video.resolucion` | `1080p` o `720p` (720p cuesta menos con Lite: $0.05/s) |
-| `video.max_clips_por_video` | Escenas de 8 s por video (3 = 24 s; 8 = 64 s, lo mínimo para el programa de Recompensas) |
-| `video.continuidad` | Cada escena arranca del último cuadro de la anterior (personajes consistentes) |
-| `video.texto_gancho` | `true`/`false` para el texto en pantalla |
-| `presupuesto.tope_mensual_usd` | Tope de gasto estimado al mes |
-| `tiktok.subir` | `false` para solo generar el video sin mandarlo a TikTok |
+| `flow.carpeta_drive_id` | Carpeta de Drive que revisa el modo Flow |
+| `flow.minutos_espera` | Minutos sin cambios antes de tomar un video (para no agarrarlo a medio subir) |
+| `flow.resolucion` / `flow.texto_gancho` | Resolución de salida y texto gancho en los videos de Flow |
+| `video.modelos` | Modelos de Veo del modo automático; si el primero no está disponible, usa el siguiente |
+| `video.resolucion` | `720p` (Lite $0.05/s) o `1080p` (Lite $0.08/s) |
+| `video.max_clips_por_video` | Escenas de 8 s (8 = 64 s) |
+| `video.continuidad` | Cada escena arranca del último cuadro de la anterior |
+| `presupuesto.tope_mensual_usd` | Tope de gasto estimado del modo automático |
+| `tiktok.subir` | `false` para solo generar sin mandar a TikTok |
 
-Para cambiar días u hora, edita la línea `cron` de `.github/workflows/video-diario.yml` (la hora está en UTC: hora de CDMX + 6).
+Horarios: línea `cron` de cada workflow en `.github/workflows/` (en UTC: hora de CDMX + 6).
 
 ## Plan B: si la sandbox no deja publicar los borradores
 
-Hay que mandar la app a revisión de TikTok (tarda de varios días a 2 semanas):
-
-1. Sube `web/privacidad.html` y `web/terminos.html` a Hostinger, por ejemplo en `public_html/tiktok-ia/` → quedan en `https://emstudiodigital.com/tiktok-ia/privacidad.html` y `.../terminos.html`. Antes cambia `{{CORREO_DE_CONTACTO}}` por tu correo.
-2. En la app (Production): llena ícono, descripción, categoría y esas dos URLs.
-3. Graba un video corto de pantalla mostrando el flujo: correr `tiktok_login.py`, autorizar, y el borrador llegando a TikTok.
-4. **Submit for review**. Cuando la aprueben, corre otra vez `tiktok_login.py` con el Client key/secret **de producción** y actualiza los secretos `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` y `TIKTOK_REFRESH_TOKEN`.
+1. Sube `web/privacidad.html` y `web/terminos.html` a Hostinger (ej. `public_html/tiktok-ia/`); antes cambia `{{CORREO_DE_CONTACTO}}` por tu correo.
+2. En la app (Production): ícono, descripción, categoría y esas dos URLs.
+3. Graba un video corto de pantalla del flujo (`tiktok_login.py`, autorizar, borrador llegando a TikTok).
+4. **Submit for review** (de varios días a 2 semanas). Al aprobarse, corre otra vez `tiktok_login.py` con las credenciales **de producción** y actualiza `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` y `TIKTOK_REFRESH_TOKEN`.
 
 ## Problemas comunes
 
-| Mensaje en el issue | Solución |
+| Mensaje | Solución |
 |---|---|
+| `Drive no encuentra la carpeta` / `no dejó renombrar` | Falta el Paso 8 (compartir **TikTok IA** como Editor con la cuenta de servicio) o el Paso 1.4 (Google Drive API) |
+| Subí el video y no pasa nada | Espera: toma videos con 10 min sin cambios y revisa cada hora de 7 a. m. a 11 p. m. O corre el workflow a mano |
 | `No se pudo renovar el acceso a TikTok (invalid_grant…)` | Corre otra vez `tools/tiktok_login.py` y actualiza `TIKTOK_REFRESH_TOKEN` |
-| `spam_risk_too_many_pending_share` | Tienes 5 borradores sin publicar; publica o borra en TikTok |
-| `Falta la variable/secreto …` | Falta ese secreto en Settings → Secrets → Actions |
-| `PERMISSION_DENIED` de Google | Revisa que la cuenta de servicio tenga el rol *Usuario de Vertex AI* y que Vertex AI API esté habilitada |
-| No te deja crear la clave JSON | Tu cuenta tiene una política que bloquea claves; avísale a Claude para cambiar a *Workload Identity Federation* |
-| `bloqueado por filtros de seguridad` | Veo rechazó el prompt; la idea se reintenta una vez y luego sale de la cola |
-| Falla siempre en la escena 2 (con imagen inicial) | Tu región o proyecto no permite imagen→video con personas: pon `"continuidad": false` en `config.json` |
+| `spam_risk_too_many_pending_share` | Tienes 5 borradores sin publicar en TikTok |
+| `El video venía horizontal` | En Flow elige formato 9:16 antes de generar |
+| `PERMISSION_DENIED` de Vertex AI | Rol *Usuario de Vertex AI* en la cuenta de servicio y Vertex AI API habilitada |
+| No te deja crear la clave JSON | Tu cuenta bloquea claves; pídele a Claude cambiar a *Workload Identity Federation* |
+| `bloqueado por filtros de seguridad` | Veo rechazó el prompt; se reintenta una vez y la idea sale de la cola |
+| Falla siempre en la escena 2 (modo automático) | Tu proyecto no permite imagen→video con personas: `"continuidad": false` en `config.json` |
 | `Tope de gasto del mes alcanzado` | Sube `presupuesto.tope_mensual_usd` o espera al día 1 |
-| El workflow dejó de correr solo | GitHub pausa los cron tras 60 días sin actividad en el repo; entra a Actions y reactívalo |
+| Los workflows dejaron de correr solos | GitHub pausa los cron tras 60 días sin actividad; reactívalos en Actions |
 
 ## Pruebas del código
 
@@ -192,4 +210,4 @@ pip install -r requirements.txt
 python -m unittest discover -s tests -v
 ```
 
-Las pruebas no usan internet: simulan Veo con ffmpeg y TikTok con un servidor local.
+Sin internet: simulan Veo con ffmpeg, TikTok con un servidor local y Google Drive con un cliente falso.

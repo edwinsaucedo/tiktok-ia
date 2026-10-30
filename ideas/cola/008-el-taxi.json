@@ -4,10 +4,25 @@
   "gancho": "Se subió a un taxi y el chofer sabía su nombre",
   "estilo": "Cinematic Mexican telenovela look, warm dramatic lighting, shallow depth of field, subtle 35mm film grain, emotional close-ups, realistic people, natural Mexican Spanish acting",
   "escenas": [
-    "Night, inside a taxi with city lights passing outside. ELENA (40, elegant, dark business suit, hair in a low bun) gets into the back seat in a hurry: \"A la colonia Roma, por favor. Rápido.\" The DRIVER (50s, grey mustache, flat cap) looks at her in the rearview mirror: \"¿Elena? ¿Elena Torres?\"",
-    "Same taxi at night, city lights. ELENA (40, dark business suit, low bun) leans forward, suspicious: \"¿Nos conocemos?\" The DRIVER (50s, grey mustache) removes his flat cap and turns around: \"Soy Martín. El que esperaste en el altar hace veinte años.\"",
-    "Same taxi, parked under a streetlight. ELENA (40, dark business suit, low bun) is stunned, tears in her eyes, facing MARTÍN (50s, grey mustache, cap in his hands). Elena says softly: \"Martín… mi papá me dijo que tú te habías ido.\" Both realize they were deceived. Slow push-in."
+    "Inside a taxi at night, city lights passing outside, later parked under a streetlight. Characters: ELENA (40, elegant, dark business suit, hair in a low bun), MARTÍN (50s, grey mustache, flat cap, taxi driver). Elena gets into the back seat in a hurry, holding her phone. Elena says: \"A la colonia Roma, por favor. Rápido.\"",
+    "Inside a taxi at night, city lights passing outside, later parked under a streetlight. Characters: ELENA (40, elegant, dark business suit, hair in a low bun), MARTÍN (50s, grey mustache, flat cap, taxi driver). Martín keeps glancing at her in the rearview mirror. Martín says: \"Disculpe… ¿usted es Elena? ¿Elena Torres?\"",
+    "Inside a taxi at night, city lights passing outside, later parked under a streetlight. Characters: ELENA (40, elegant, dark business suit, hair in a low bun), MARTÍN (50s, grey mustache, flat cap, taxi driver). Elena lowers her phone, suspicious. Elena says: \"¿Nos conocemos?\"",
+    "Inside a taxi at night, city lights passing outside, later parked under a streetlight. Characters: ELENA (40, elegant, dark business suit, hair in a low bun), MARTÍN (50s, grey mustache, flat cap, taxi driver). At a red light Martín takes off his cap and turns around. Martín says: \"Soy Martín. Del barrio de Coyoacán.\"",
+    "Inside a taxi at night, city lights passing outside, later parked under a streetlight. Characters: ELENA (40, elegant, dark business suit, hair in a low bun), MARTÍN (50s, grey mustache, flat cap, taxi driver). Elena's face changes as she recognizes him. Elena says: \"Martín… el que me dejó plantada en el altar.\"",
+    "Inside a taxi at night, city lights passing outside, later parked under a streetlight. Characters: ELENA (40, elegant, dark business suit, hair in a low bun), MARTÍN (50s, grey mustache, flat cap, taxi driver). Martín shakes his head sadly. Martín says: \"Yo nunca te dejé. Tu papá no me dejó entrar a la iglesia.\"",
+    "Inside a taxi at night, city lights passing outside, later parked under a streetlight. Characters: ELENA (40, elegant, dark business suit, hair in a low bun), MARTÍN (50s, grey mustache, flat cap, taxi driver). Elena's eyes fill with tears. Elena says: \"Mi papá me dijo que te habías ido con otra.\"",
+    "Inside a taxi at night, city lights passing outside, later parked under a streetlight. Characters: ELENA (40, elegant, dark business suit, hair in a low bun), MARTÍN (50s, grey mustache, flat cap, taxi driver). The taxi is parked under a streetlight. They look at each other in silence. Martín smiles softly. Martín says: \"Veinte años, Elena… ¿todavía te gusta el café de la esquina?\""
   ],
-  "caption": "Veinte años creyendo una mentira 🚕💔 ¿Quieren parte 2? #novela #drama #historiascortas #telenovela #giro",
-  "continuidad": true
+  "caption": "Veinte años creyendo una mentira 🚕💔 ¿Le das otra oportunidad? #novela #drama #historiascortas #telenovela",
+  "continuidad": true,
+  "resumen_partes": [
+    "Elena sube al taxi",
+    "El chofer la reconoce",
+    "«¿Nos conocemos?»",
+    "«Soy Martín»",
+    "«El que me dejó en el altar»",
+    "«Tu papá no me dejó entrar»",
+    "«Me dijo que te fuiste con otra»",
+    "«¿Todavía te gusta el café?»"
+  ]
 }

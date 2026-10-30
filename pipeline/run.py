@@ -14,11 +14,10 @@ import os
 import shutil
 import sys
 import traceback
-from pathlib import Path
 
-from . import editar, ideas, tiktok, veo
-from .comun import (CARPETA_SALIDA, aviso_github, cargar_config, env_requerida,
-                    es_verdadero, escribir_salida_github, log)
+from . import editar, ideas, publicar, veo
+from .comun import (CARPETA_SALIDA, aviso_github, cargar_config, es_verdadero,
+                    escribir_salida_github, log)
 
 IDEA_DEMO = {
     "id": "demo-simulada",
@@ -30,27 +29,12 @@ IDEA_DEMO = {
 }
 
 
-def _url_ejecucion() -> str:
-    servidor = os.environ.get("GITHUB_SERVER_URL", "https://github.com")
-    repo = os.environ.get("GITHUB_REPOSITORY")
-    run_id = os.environ.get("GITHUB_RUN_ID")
-    return f"{servidor}/{repo}/actions/runs/{run_id}" if repo and run_id else ""
+_url_ejecucion = publicar.url_ejecucion
+_bloque_caption = publicar.bloque_caption
 
 
 def _escribir_aviso(titulo: str, cuerpo: str) -> None:
-    CARPETA_SALIDA.mkdir(parents=True, exist_ok=True)
-    (CARPETA_SALIDA / "aviso.md").write_text(cuerpo, encoding="utf-8")
-    (CARPETA_SALIDA / "aviso_titulo.txt").write_text(titulo[:200], encoding="utf-8")
-    escribir_salida_github("aviso_titulo", titulo[:200])
-    resumen = os.environ.get("GITHUB_STEP_SUMMARY")
-    if resumen:
-        with open(resumen, "a", encoding="utf-8") as f:
-            f.write(f"# {titulo}\n\n{cuerpo}\n")
-    log(f"\n=== {titulo} ===\n{cuerpo}")
-
-
-def _bloque_caption(idea: dict) -> str:
-    return f"```\n{idea.get('caption', '').strip()}\n```"
+    publicar.escribir_aviso(CARPETA_SALIDA, titulo, cuerpo)
 
 
 def main() -> int:
@@ -129,21 +113,9 @@ def main() -> int:
     # 3) TikTok -----------------------------------------------------------------------
     publish_id, estado_tiktok, error_tiktok = None, None, None
     if subir:
-        try:
-            refresh_actual = env_requerida("TIKTOK_REFRESH_TOKEN")
-            tokens = tiktok.refrescar_tokens(env_requerida("TIKTOK_CLIENT_KEY"),
-                                             env_requerida("TIKTOK_CLIENT_SECRET"), refresh_actual)
-            if tokens.refresh_token != refresh_actual:
-                # TikTok puede rotar el refresh token: el workflow lo guarda en el secreto.
-                (CARPETA_SALIDA / "nuevo_refresh_token.txt").write_text(tokens.refresh_token)
-            publish_id = tiktok.subir_borrador(video, tokens.access_token)
-            estado_tiktok = tiktok.esperar_estado(
-                publish_id, tokens.access_token,
-                int(cfg.get("tiktok", {}).get("segundos_espera_estado", 300)))
-            log(f"Estado en TikTok: {estado_tiktok}")
-        except Exception as e:
-            traceback.print_exc()
-            error_tiktok = str(e)
+        r = publicar.subir_a_tiktok(video, CARPETA_SALIDA,
+                                    int(cfg.get("tiktok", {}).get("segundos_espera_estado", 300)))
+        publish_id, estado_tiktok, error_tiktok = r.publish_id, r.estado, r.error
 
     # 4) Registro de la cola ------------------------------------------------------------
     if not simular and ruta is not None:
@@ -184,12 +156,7 @@ def main() -> int:
 
     _escribir_aviso(
         f"{prefijo}🎬 Borrador listo en TikTok: {titulo}",
-        f"{datos}{extra}\n\n### Para publicarlo\n"
-        "1. Abre TikTok: te llegó una notificación en la **Bandeja de entrada** para terminar el borrador.\n"
-        "2. Pega este caption:\n"
-        f"{_bloque_caption(idea)}\n"
-        "3. En **Más opciones**, activa **Contenido generado por IA**.\n"
-        "4. Publica.\n"
+        f"{datos}{extra}\n\n{publicar.instrucciones_publicar(idea)}"
         f"\nEstado reportado por TikTok: `{estado_tiktok}`{descarga}{cola}")
     return 0
 

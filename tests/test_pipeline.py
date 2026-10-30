@@ -23,6 +23,9 @@ from google.genai import types  # noqa: E402
 from pipeline import editar, ideas, run, tiktok, veo  # noqa: E402
 from pipeline.comun import cargar_config  # noqa: E402
 
+# Por si otro módulo de pruebas importó pipeline.tiktok antes de fijar la variable:
+tiktok.API = os.environ["TIKTOK_API_BASE"]
+
 MB = 1024 * 1024
 
 
@@ -94,6 +97,7 @@ class _Base(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.servidor.shutdown()
+        cls.servidor.server_close()
 
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())
@@ -326,8 +330,10 @@ class TestFlujoCompleto(_Base):
     def test_config_de_entrega_cabe_en_el_tope(self):
         cfg = cargar_config()
         v = cfg["video"]
-        costo = veo.costo_estimado(cfg, v["modelos"][0], v["segundos_por_clip"] * v["max_clips_por_video"])
-        self.assertLessEqual(costo * 8, cfg["presupuesto"]["tope_mensual_usd"])  # 8 videos al mes
+        segundos = v["segundos_por_clip"] * v["max_clips_por_video"]
+        self.assertGreaterEqual(segundos, 60)  # videos de 1 minuto o más
+        costo = veo.costo_estimado(cfg, v["modelos"][0], segundos)
+        self.assertLessEqual(costo * 3, cfg["presupuesto"]["tope_mensual_usd"])  # 3 videos al mes
 
     def test_idea_invalida_sale_de_la_cola(self):
         (self.cola / "0-mala.json").write_text('{"id": "mala"}', encoding="utf-8")

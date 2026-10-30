@@ -1,32 +1,21 @@
-name: Video diario para TikTok
+name: Videos de Flow desde Google Drive
 
 on:
   schedule:
-    # Martes y viernes a las 15:17 UTC = 9:17 a. m. hora del centro de México (UTC-6).
-    # Para lunes, miércoles y viernes usa "17 15 * * 1,3,5" (revisa el costo en el README antes).
-    - cron: "17 15 * * 2,5"
+    # Cada hora, de 7 a. m. a 11 p. m. hora del centro de México (13:00–05:00 UTC).
+    - cron: "41 0-5,13-23 * * *"
   workflow_dispatch:
-    inputs:
-      simular:
-        description: "Simular el video (clips de prueba, NO gasta créditos de Google)"
-        type: boolean
-        default: false
-      subir_a_tiktok:
-        description: "Mandar el video a TikTok como borrador"
-        type: boolean
-        default: true
 
 permissions:
-  contents: write   # guardar el estado de la cola de ideas
+  contents: write   # guardar qué historias ya se procesaron
   issues: write     # avisarte con el caption listo para copiar
 
 concurrency:
-  group: video-diario
+  group: tiktok-ia  # nunca corre al mismo tiempo que el modo automático (comparten el token de TikTok)
   cancel-in-progress: false
 
 jobs:
   verificar:
-    # Si aún no configuras los secretos, las ejecuciones programadas se saltan sin marcar error.
     runs-on: ubuntu-24.04
     outputs:
       listo: ${{ steps.revisar.outputs.listo }}
@@ -35,22 +24,20 @@ jobs:
         id: revisar
         env:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
-          EVENTO: ${{ github.event_name }}
         run: |
-          if [ "$EVENTO" = "workflow_dispatch" ] || { [ -n "$GCP_SA_KEY" ] && [ -n "$GCP_PROJECT" ] && [ -n "$TIKTOK_REFRESH_TOKEN" ]; }; then
+          if [ -n "$GCP_SA_KEY" ] && [ -n "$TIKTOK_REFRESH_TOKEN" ]; then
             echo "listo=true" >> "$GITHUB_OUTPUT"
           else
             echo "listo=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Faltan secretos (README, paso 6). Hoy no se genera video."
+            echo "::notice::Faltan secretos (README, paso 6). No se revisa Drive."
           fi
 
-  video:
+  flow:
     needs: verificar
     if: ${{ needs.verificar.outputs.listo == 'true' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 45
     steps:
       - name: Descargar el repositorio
         uses: actions/checkout@v4
@@ -61,29 +48,32 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Instalar ffmpeg y dependencias
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core
-          pip install -q -r requirements.txt
+      - name: Instalar dependencias de Python
+        run: pip install -q -r requirements.txt
 
       - name: Conectar con Google Cloud
-        if: ${{ inputs.simular != true }}
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Generar video y mandarlo a TikTok
+      - name: ¿Hay videos nuevos en Drive?
+        id: revisar
+        run: python -m pipeline.flow --revisar
+
+      - name: Instalar ffmpeg
+        if: ${{ steps.revisar.outputs.hay_trabajo == '1' }}
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core
+
+      - name: Procesar el video y mandarlo a TikTok
         id: pipeline
+        if: ${{ steps.revisar.outputs.hay_trabajo == '1' }}
         env:
-          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
           TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
-          SIMULAR: ${{ inputs.simular == true && '1' || '0' }}
-          # En las ejecuciones programadas no hay inputs: siempre se sube.
-          NO_SUBIR: ${{ github.event_name == 'workflow_dispatch' && inputs.subir_a_tiktok == false && '1' || '0' }}
-        run: python -m pipeline.run
+        run: python -m pipeline.flow
 
       - name: Guardar el nuevo refresh token de TikTok
         if: ${{ always() && hashFiles('salida/nuevo_refresh_token.txt') != '' }}
@@ -102,26 +92,26 @@ jobs:
         if: ${{ always() && steps.pipeline.outputs.video != '' }}
         uses: actions/upload-artifact@v4
         with:
-          name: video-${{ github.run_number }}
+          name: flow-${{ github.run_number }}
           path: ${{ steps.pipeline.outputs.video }}
           retention-days: 7
 
-      - name: Actualizar la cola de ideas
-        if: ${{ always() && inputs.simular != true }}
+      - name: Actualizar el registro de historias
+        if: ${{ always() && steps.revisar.outputs.hay_trabajo == '1' }}
         run: |
           git config user.name "tiktok-ia-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add ideas/
           if git diff --cached --quiet; then
-            echo "Sin cambios en la cola."
+            echo "Sin cambios."
             exit 0
           fi
-          git commit -m "Cola de ideas: $(date -u +%F)"
+          git commit -m "Flow: video procesado $(date -u +%F)"
           for intento in 1 2 3; do
             git pull --rebase --quiet && git push && exit 0
             sleep 5
           done
-          echo "::error::No se pudo guardar la cola de ideas."
+          echo "::error::No se pudo guardar el registro."
           exit 1
 
       - name: Avisarme (issue con el caption)
