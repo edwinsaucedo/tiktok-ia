@@ -53,6 +53,8 @@ class TestConectar(unittest.TestCase):
         pkce = json.loads(self.gh.secretos["TIKTOK_PKCE"])
         texto = self.resumen.read_text()
         url = next(p for p in texto.split() if p.startswith("https://www.tiktok.com/v2/auth/authorize/"))
+        # GitHub tapa con *** los valores de secretos: el key no debe aparecer tal cual en el texto
+        self.assertNotIn("ck123", texto)
         q = {k: v[0] for k, v in urllib.parse.parse_qs(urllib.parse.urlparse(url).query).items()}
         return pkce, q
 

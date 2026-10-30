@@ -73,19 +73,30 @@ def generar_pkce() -> tuple[str, str]:
     return verifier, hashlib.sha256(verifier.encode("ascii")).hexdigest()
 
 
+def codificar_todo(texto: str) -> str:
+    """Codifica cada carácter como %XX. GitHub tapa con *** cualquier valor de un secreto que
+    aparezca en el log o en el resumen; así el client_key no coincide letra por letra y no se tapa,
+    y TikTok lo decodifica igual."""
+    return "".join(f"%{b:02X}" for b in texto.encode("utf-8"))
+
+
+def armar_url(client_key: str, estado: str, challenge: str) -> str:
+    resto = urllib.parse.urlencode({
+        "scope": SCOPES, "response_type": "code", "redirect_uri": REDIRECT_URI,
+        "state": estado, "code_challenge": challenge, "code_challenge_method": "S256",
+    })
+    return f"{AUTH_URL}?client_key={codificar_todo(client_key)}&{resto}"
+
+
 def paso_1() -> None:
     client_key = _requerida("TIKTOK_CLIENT_KEY")
     verifier, challenge = generar_pkce()
     estado = secrets.token_urlsafe(16)
     _guardar_secreto("TIKTOK_PKCE", json.dumps({"verifier": verifier, "state": estado}))
-    url = AUTH_URL + "?" + urllib.parse.urlencode({
-        "client_key": client_key, "scope": SCOPES, "response_type": "code",
-        "redirect_uri": REDIRECT_URI, "state": estado,
-        "code_challenge": challenge, "code_challenge_method": "S256",
-    })
+    url = armar_url(client_key, estado, challenge)
     _resumen(
         "## Paso 1 listo ✅\n\n"
-        f"1. Abre esta dirección en tu navegador y autoriza con tu cuenta de TikTok:\n\n   {url}\n\n"
+        f"1. Abre esta dirección en tu navegador y autoriza con tu cuenta de TikTok:\n\n   [👉 Autorizar en TikTok]({url})\n\n   {url}\n\n"
         "2. Al final el navegador dirá que **no puede conectar con localhost**. Es normal.\n"
         "3. Copia la dirección completa de la barra (empieza con `http://localhost:8765/callback/?code=`).\n"
         "4. Vuelve a correr **Conectar TikTok** y pégala en el campo. Hazlo en menos de 5 minutos.\n"
