@@ -1,0 +1,44 @@
+{
+  "_ayuda": "Ajustes del pipeline. Lee la sección 'Ajustes' del README antes de cambiar algo.",
+
+  "tema_cuenta": "PENDIENTE: escribe aquí de qué trata tu cuenta de TikTok",
+
+  "video": {
+    "modelos": ["veo-3.1-lite-generate-001", "veo-3.1-fast-generate-001"],
+    "region": "us-central1",
+    "resolucion": "1080p",
+    "segundos_por_clip": 8,
+    "max_clips_por_video": 1,
+    "audio": true,
+    "idioma_audio": "español de México",
+    "prompt_negativo": "texto en pantalla, subtítulos, letras, marcas de agua, logotipos, interfaz de usuario",
+    "generacion_personas": "allow_adult",
+    "reintentos_por_clip": 2,
+    "texto_gancho": true,
+    "segundos_texto_gancho": 3
+  },
+
+  "ideas": {
+    "respaldo_gemini": true,
+    "modelos_respaldo": ["gemini-2.5-flash"],
+    "region_respaldo": "global",
+    "intentos_max_por_idea": 2
+  },
+
+  "tiktok": {
+    "subir": true,
+    "segundos_espera_estado": 300
+  },
+
+  "presupuesto": {
+    "_nota": "Si el gasto estimado del mes más el del siguiente video pasa este tope, no se genera video y te avisa.",
+    "tope_mensual_usd": 10
+  },
+
+  "precios_usd_por_segundo": {
+    "_nota": "Precios de referencia de la API de Veo 3.1. Solo sirven para estimar el costo en el aviso; Google cobra lo que diga su página de precios.",
+    "veo-3.1-lite-generate-001": {"720p": 0.05, "1080p": 0.08},
+    "veo-3.1-fast-generate-001": {"720p": 0.10, "1080p": 0.12},
+    "veo-3.1-generate-001": {"720p": 0.40, "1080p": 0.40}
+  }
+}

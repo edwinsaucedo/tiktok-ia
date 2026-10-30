@@ -1,0 +1,7 @@
+salida/
+__pycache__/
+*.pyc
+.venv/
+*.json.key
+llave-*.json
+*-sa.json
