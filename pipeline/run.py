@@ -44,6 +44,10 @@ def main() -> int:
     proyecto = os.environ.get("GCP_PROJECT", "").strip() or None
     url = _url_ejecucion()
 
+    if not simular and not cfg.get("modo_automatico", {}).get("activo", True):
+        log("El modo automático está apagado (config.json → modo_automatico.activo = false). No se hace nada.")
+        return 0
+
     if CARPETA_SALIDA.exists():
         shutil.rmtree(CARPETA_SALIDA)
     CARPETA_SALIDA.mkdir(parents=True)

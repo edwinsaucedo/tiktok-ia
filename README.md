@@ -50,6 +50,8 @@ Si la carpeta queda con **⚠️** (no llegó a TikTok) o **❌** (archivo daña
 
 ### Paso 1. Google Cloud: créditos, proyecto, Vertex AI y Drive
 
+> **Solo modo Flow (sin facturación):** si tu cuenta de facturación está cerrada o no quieres usar tarjeta, sáltate 1.1, 1.3 y 1.6, en 1.4 habilita **solo Google Drive API** y en 1.5 no le pongas rol a la cuenta de servicio. El modo Flow funciona completo así. El modo automático queda apagado (`modo_automatico.activo: false` en `config.json`) hasta que tengas facturación activa.
+
 1. **Activa tus créditos de Gemini Pro.** Entra a <https://developers.google.com/program> con la cuenta de Google donde pagas Gemini Pro → *Únete al programa* → en tu perfil, sección **Beneficios**, activa los **créditos de Google Cloud ($10 USD/mes)**. Te pedirá una **cuenta de facturación** (con tarjeta; los créditos se gastan primero).
 2. **Crea el proyecto.** <https://console.cloud.google.com> → selector de proyectos → **Proyecto nuevo** → nombre `tiktok-ia` → Crear. Anota el **ID del proyecto** (ej. `tiktok-ia-482913`).
 3. **Liga la facturación.** Menú ☰ → **Facturación** → vincula la cuenta donde quedaron los créditos.

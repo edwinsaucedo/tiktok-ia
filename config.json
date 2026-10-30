@@ -3,6 +3,11 @@
 
   "tema_cuenta": "Mini-novelas en español de México: historias dramáticas cortas tipo telenovela (amor, traiciones, secretos de familia, venganzas, giros inesperados). Cada video dura 1 minuto: una historia completa en 8 partes de 8 segundos, con planteamiento, conflicto y giro final que deja con ganas de más.",
 
+  "modo_automatico": {
+    "_nota": "Videos generados por Veo vía API (necesita cuenta de facturación de Google Cloud activa). Pon true cuando la tengas.",
+    "activo": false
+  },
+
   "flow": {
     "_nota": "Modo Flow: ID de la carpeta 'TikTok IA' de Google Drive (lo que va después de /folders/ en la dirección).",
     "carpeta_drive_id": "17DGHYY9XH2khxh2qcSEgrsuZpmMjN5vO",

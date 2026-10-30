@@ -108,6 +108,7 @@ class _Base(unittest.TestCase):
         self.hechas.mkdir(parents=True)
         self.cfg = cargar_config()
         self.cfg["video"]["max_clips_por_video"] = 2
+        self.cfg["modo_automatico"]["activo"] = True
         self.parches = [
             mock.patch.object(ideas, "CARPETA_COLA", self.cola),
             mock.patch.object(ideas, "CARPETA_HECHAS", self.hechas),
@@ -334,6 +335,14 @@ class TestFlujoCompleto(_Base):
         self.assertGreaterEqual(segundos, 60)  # videos de 1 minuto o más
         costo = veo.costo_estimado(cfg, v["modelos"][0], segundos)
         self.assertLessEqual(costo * 3, cfg["presupuesto"]["tope_mensual_usd"])  # 3 videos al mes
+
+    def test_modo_automatico_apagado_no_hace_nada(self):
+        self.cfg["modo_automatico"]["activo"] = False
+        self._poner_idea()
+        self.assertEqual(self._correr({}), 0)
+        self.assertFalse(self.salida.exists() and any(self.salida.iterdir()))
+        self.assertEqual(len(list(self.cola.glob("*.json"))), 1)
+        self.assertNotIn("init", _TikTokFalso.estado)
 
     def test_idea_invalida_sale_de_la_cola(self):
         (self.cola / "0-mala.json").write_text('{"id": "mala"}', encoding="utf-8")
