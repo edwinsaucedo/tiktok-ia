@@ -103,6 +103,16 @@ def paso_1() -> None:
     )
 
 
+def cuenta_conectada(access_token: str) -> dict:
+    """Nombre y foto de la cuenta autorizada (permiso user.info.basic). Nunca lanza excepción."""
+    try:
+        r = requests.get(f"{API}/v2/user/info/", params={"fields": "open_id,display_name,avatar_url"},
+                         headers={"Authorization": f"Bearer {access_token}"}, timeout=30)
+        return (r.json().get("data") or {}).get("user") or {}
+    except Exception:
+        return {}
+
+
 def paso_2(url_regreso: str) -> None:
     client_key = _requerida("TIKTOK_CLIENT_KEY")
     client_secret = _requerida("TIKTOK_CLIENT_SECRET")
@@ -146,7 +156,12 @@ def paso_2(url_regreso: str) -> None:
     scopes = datos.get("scope", "")
     aviso = "" if "video.upload" in scopes else (
         "\n\n⚠️ El permiso **video.upload** no aparece. Revisa que la app tenga Content Posting API.")
-    _resumen(f"## Cuenta de TikTok conectada ✅\n\nPermisos: `{scopes}`\n\n"
+    usuario = cuenta_conectada(datos.get("access_token", ""))
+    quien = ""
+    if usuario.get("display_name"):
+        foto = f"<img src=\"{usuario['avatar_url']}\" width=\"64\"> " if usuario.get("avatar_url") else ""
+        quien = f"{foto}Cuenta: **{usuario['display_name']}**\n\n"
+    _resumen(f"## Cuenta de TikTok conectada ✅\n\n{quien}Permisos: `{scopes}`\n\n"
              f"El refresh token quedó guardado en el secreto `TIKTOK_REFRESH_TOKEN`.{aviso}")
 
 

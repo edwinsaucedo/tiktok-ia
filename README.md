@@ -197,6 +197,8 @@ Horarios: línea `cron` de cada workflow en `.github/workflows/` (en UTC: hora d
 
 ## Revisión de TikTok (para que lleguen los borradores directo)
 
+> **Antes de mandarla lee [`docs/revision-tiktok.md`](docs/revision-tiktok.md):** TikTok no aprueba apps de uso personal, y hoy la app está descrita así. Si es solo para tu cuenta, quédate con Telegram.
+
 1. Las páginas ya están publicadas: https://emstudiodigital.com/tiktok-ia/terminos.html y https://emstudiodigital.com/tiktok-ia/privacidad.html (archivos en `web/`).
 2. En la app (Production): ícono, descripción, categoría y esas dos URLs.
 3. Graba un video corto de pantalla del flujo (guion en `docs/revision-tiktok.md`).

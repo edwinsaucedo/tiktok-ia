@@ -75,9 +75,15 @@ class TestConectar(unittest.TestCase):
         resp = mock.Mock(status_code=200)
         resp.json.return_value = {"access_token": "act.x", "refresh_token": "rft.nuevo",
                                   "scope": "user.info.basic,video.upload", "open_id": "o"}
+        info = mock.Mock(status_code=200)
+        info.json.return_value = {"data": {"user": {"open_id": "o", "display_name": "elcanacacod",
+                                                    "avatar_url": "https://x/a.jpg"}}}
         with mock.patch.dict(os.environ, {"URL_REGRESO": regreso, "TIKTOK_PKCE": json.dumps(pkce)}), \
-                mock.patch.object(conectar.requests, "post", return_value=resp) as post:
+                mock.patch.object(conectar.requests, "post", return_value=resp) as post, \
+                mock.patch.object(conectar.requests, "get", return_value=info) as get:
             conectar.main()
+        self.assertEqual(get.call_args.kwargs["headers"]["Authorization"], "Bearer act.x")
+        self.assertIn("Cuenta: **elcanacacod**", self.resumen.read_text())
         datos = post.call_args.kwargs["data"]
         self.assertEqual(datos["code"], "abc*123!")  # decodificado
         self.assertEqual(datos["code_verifier"], pkce["verifier"])
