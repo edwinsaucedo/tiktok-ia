@@ -184,7 +184,7 @@ Horarios: línea `cron` de cada workflow en `.github/workflows/` (en UTC: hora d
 
 ## Plan B: si la sandbox no deja publicar los borradores
 
-1. Sube `web/privacidad.html` y `web/terminos.html` a Hostinger (ej. `public_html/tiktok-ia/`); antes cambia `{{CORREO_DE_CONTACTO}}` por tu correo.
+1. Las páginas ya están publicadas: https://emstudiodigital.com/tiktok-ia/terminos.html y https://emstudiodigital.com/tiktok-ia/privacidad.html (archivos en `web/`).
 2. En la app (Production): ícono, descripción, categoría y esas dos URLs.
 3. Graba un video corto de pantalla del flujo (`tiktok_login.py`, autorizar, borrador llegando a TikTok).
 4. **Submit for review** (de varios días a 2 semanas). Al aprobarse, corre otra vez `tiktok_login.py` con las credenciales **de producción** y actualiza `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` y `TIKTOK_REFRESH_TOKEN`.
