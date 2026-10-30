@@ -48,6 +48,8 @@ class _TelegramFalso(http.server.BaseHTTPRequestHandler):
             return self._responder(401, {"ok": False, "error_code": 401, "description": "Unauthorized"})
         if metodo == "getUpdates":
             return self._responder(200, {"ok": True, "result": self.actualizaciones})
+        if metodo == "getMe":
+            return self._responder(200, {"ok": True, "result": {"username": "canacareels_bot"}})
         self._responder(404, {"ok": False, "description": "Not Found"})
 
     def do_POST(self):
@@ -149,6 +151,7 @@ class TestEnviar(_ConTelegram):
             r = telegram.enviar(self.video, "t", "c")
         self.assertFalse(r.enviado)
         self.assertIn("/start", r.error)
+        self.assertIn("@canacareels_bot", r.error)   # dice a qué bot pertenece el token
 
     def test_token_malo_da_pista_y_no_se_filtra(self):
         with mock.patch.dict(os.environ, {"TELEGRAM_BOT_TOKEN": "999:otro", "TELEGRAM_CHAT_ID": "777"}):

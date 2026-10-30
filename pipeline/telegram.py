@@ -54,17 +54,29 @@ def _revisar(r: requests.Response, accion: str) -> dict:
     return datos.get("result")
 
 
+def _nombre_del_bot(token: str) -> str | None:
+    try:
+        r = requests.get(_url(token, "getMe"), timeout=30)
+        return (_revisar(r, "identificar el bot") or {}).get("username")
+    except Exception:
+        return None
+
+
 def descubrir_chat_id(token: str) -> str:
     """Busca el chat privado más reciente que le escribió al bot (por ejemplo con /start)."""
     r = requests.get(_url(token, "getUpdates"), params={"timeout": 0}, timeout=30)
     actualizaciones = _revisar(r, "leer los mensajes del bot") or []
     for upd in reversed(actualizaciones):
-        msg = upd.get("message") or upd.get("edited_message") or {}
-        chat = msg.get("chat") or {}
-        if chat.get("type") == "private" and chat.get("id") is not None:
-            return str(chat["id"])
-    raise ErrorTelegram("No encontré tu chat: abre tu bot en Telegram, mándale /start y vuelve a correr "
-                        "el workflow (Telegram solo guarda esos mensajes 24 horas).")
+        for clave in ("message", "edited_message", "my_chat_member"):
+            chat = (upd.get(clave) or {}).get("chat") or {}
+            if chat.get("type") == "private" and chat.get("id") is not None:
+                return str(chat["id"])
+    bot = _nombre_del_bot(token)
+    cual = (f"El token guardado en TELEGRAM_BOT_TOKEN es del bot @{bot}: mándale /start a ESE bot "
+            f"(https://t.me/{bot}). Si no es el tuyo, copia el token correcto en @BotFather → /mybots → "
+            "tu bot → API Token, y actualiza el secreto. ") if bot else ""
+    raise ErrorTelegram(f"No encontré tu chat ({len(actualizaciones)} mensajes recibidos). {cual}"
+                        "Luego vuelve a correr el workflow (Telegram solo guarda esos mensajes 24 horas).")
 
 
 def _duracion(video: Path) -> float:
