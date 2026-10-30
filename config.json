@@ -10,7 +10,8 @@
     "carpeta_drive_id": "17DGHYY9XH2khxh2qcSEgrsuZpmMjN5vO",
     "minutos_espera": 10,
     "resolucion": "1080p",
-    "texto_gancho": true
+    "texto_gancho": true,
+    "quitar_pausas": true
   },
   "video": {
     "modelos": [
@@ -28,7 +29,8 @@
     "generacion_personas": "allow_adult",
     "reintentos_por_clip": 2,
     "texto_gancho": true,
-    "segundos_texto_gancho": 3
+    "segundos_texto_gancho": 3,
+    "quitar_pausas": true
   },
   "ideas": {
     "respaldo_gemini": true,

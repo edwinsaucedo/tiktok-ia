@@ -97,6 +97,10 @@ def main() -> int:
         res = veo.generar_clips(idea, cfg, CARPETA_SALIDA / "clips", proyecto, simular)
         video = editar.unir(res.clips, idea.get("gancho"), cfg["video"],
                             CARPETA_SALIDA / f"{idea['id']}.mp4")
+        if cfg["video"].get("quitar_pausas", True):
+            _, n_pausas, seg_pausas = editar.quitar_pausas(video)
+            if n_pausas:
+                res.avisos.append(f"Se quitaron {n_pausas} pausas congeladas en los cortes ({seg_pausas:.1f} s).")
     except Exception as e:
         traceback.print_exc()
         estado = "simulacion"

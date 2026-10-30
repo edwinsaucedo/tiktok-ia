@@ -30,6 +30,9 @@ def armar_prompt(escena: str, idea: dict, conf: dict) -> str:
     if estilo:
         partes.append(f"Style: {estilo}.")
     partes.append(escena.strip())
+    # Al alargar, cada parte arranca del último cuadro de la anterior: pedimos movimiento continuo
+    # para que no se vea la imagen congelada en los cortes.
+    partes.append("Continuous natural motion from the very first frame to the last, no pauses or frozen moments.")
     partes.append("Vertical 9:16 composition for TikTok, subject centered, no on-screen text.")
     if conf.get("audio", True):
         partes.append(f"Si alguien habla, habla en {conf.get('idioma_audio', 'español de México')}.")

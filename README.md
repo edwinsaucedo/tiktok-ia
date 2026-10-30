@@ -185,6 +185,7 @@ Consejos: cada parte repite la descripción de los personajes (edad, ropa, cabel
 | `flow.carpeta_drive_id` | Carpeta de Drive que revisa el modo Flow |
 | `flow.minutos_espera` | Minutos sin cambios antes de tomar un video (para no agarrarlo a medio subir) |
 | `flow.resolucion` / `flow.texto_gancho` | Resolución de salida y texto gancho en los videos de Flow |
+| `flow.quitar_pausas` / `video.quitar_pausas` | Recorta las pausas congeladas en los cortes entre partes, sin bajar de 61 s |
 | `video.modelos` | Modelos de Veo del modo automático; si el primero no está disponible, usa el siguiente |
 | `video.resolucion` | `720p` (Lite $0.05/s) o `1080p` (Lite $0.08/s) |
 | `video.max_clips_por_video` | Escenas de 8 s (8 = 64 s) |

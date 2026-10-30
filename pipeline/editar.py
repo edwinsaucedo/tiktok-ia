@@ -127,3 +127,83 @@ def unir(clips: list[Path], gancho: str | None, conf_video: dict, destino: Path)
 
     log(f"Video final: {destino.name} ({destino.stat().st_size / 1e6:.1f} MB, {duracion(destino):.1f} s)")
     return destino
+
+
+# ------------------------------------------------------------------ pausas en los cortes
+# Al alargar en Flow (o encadenar escenas en el modo automático) cada parte arranca del último
+# cuadro de la anterior: quedan instantes con la imagen congelada en los cortes. Aquí se detectan
+# y se recortan (imagen y audio), sin dejar el video por debajo de un mínimo de duración.
+
+def detectar_congelados(video: Path, ruido: float = 0.003, minimo: float = 0.25) -> list[tuple[float, float]]:
+    """Intervalos (inicio, fin) en segundos donde la imagen no cambia."""
+    r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(video), "-map", "0:v:0",
+                        "-vf", f"freezedetect=n={ruido}:d={minimo}", "-f", "null", "-"],
+                       capture_output=True, text=True)
+    intervalos, inicio = [], None
+    for linea in r.stderr.splitlines():
+        if "freeze_start:" in linea:
+            inicio = float(linea.rsplit(":", 1)[1])
+        elif "freeze_end:" in linea and inicio is not None:
+            intervalos.append((inicio, float(linea.rsplit(":", 1)[1])))
+            inicio = None
+    if inicio is not None:
+        intervalos.append((inicio, duracion(video)))
+    return intervalos
+
+
+def planear_cortes(congelados: list[tuple[float, float]], total: float, minimo_total: float,
+                   margen: float = 0.12, max_corte: float = 1.5) -> list[tuple[float, float]]:
+    """Qué tramos quitar: de cada pausa se deja `margen` s y se quita hasta `max_corte` s,
+    empezando por las pausas más largas y sin bajar de `minimo_total` segundos."""
+    disponible = total - minimo_total
+    if disponible <= 0:
+        return []
+    candidatos = []
+    for inicio, fin in congelados:
+        a = max(inicio + margen, fin - max_corte)
+        if fin - a > 0.05:
+            candidatos.append((a, fin))
+    cortes = []
+    for a, b in sorted(candidatos, key=lambda c: c[1] - c[0], reverse=True):
+        if disponible <= 0.05:
+            break
+        largo = min(b - a, disponible)
+        cortes.append((b - largo, b))
+        disponible -= largo
+    return sorted(cortes)
+
+
+def quitar_pausas(video: Path, minimo_total: float = 61.0) -> tuple[Path, int, float]:
+    """Recorta las pausas congeladas. Regresa (video, cuántas se quitaron, segundos quitados).
+    Si no hay nada que quitar regresa el mismo archivo."""
+    total = duracion(video)
+    cortes = planear_cortes(detectar_congelados(video), total, minimo_total)
+    if not cortes:
+        return video, 0, 0.0
+    tramos, actual = [], 0.0
+    for a, b in cortes:
+        if a - actual > 0.04:
+            tramos.append((actual, a))
+        actual = b
+    if total - actual > 0.04:
+        tramos.append((actual, total))
+    con_audio = tiene_audio(video)
+    partes = []
+    for i, (a, b) in enumerate(tramos):
+        partes.append(f"[0:v]trim=start={a:.3f}:end={b:.3f},setpts=PTS-STARTPTS[v{i}]")
+        if con_audio:
+            partes.append(f"[0:a]atrim=start={a:.3f}:end={b:.3f},asetpts=PTS-STARTPTS[a{i}]")
+    entradas = "".join(f"[v{i}]" + (f"[a{i}]" if con_audio else "") for i in range(len(tramos)))
+    partes.append(f"{entradas}concat=n={len(tramos)}:v=1:a={1 if con_audio else 0}[v]" + ("[a]" if con_audio else ""))
+    destino = video.with_name(video.stem + "-sin-pausas.mp4")
+    cmd = ["ffmpeg", "-y", "-loglevel", "error", "-i", str(video), "-filter_complex", ";".join(partes),
+           "-map", "[v]"]
+    if con_audio:
+        cmd += ["-map", "[a]", "-c:a", "aac", "-b:a", "160k"]
+    cmd += ["-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p",
+            "-movflags", "+faststart", str(destino)]
+    subprocess.run(cmd, check=True)
+    destino.replace(video)
+    quitado = sum(b - a for a, b in cortes)
+    log(f"Pausas quitadas en los cortes: {len(cortes)} ({quitado:.1f} s).")
+    return video, len(cortes), quitado

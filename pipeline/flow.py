@@ -171,6 +171,10 @@ def main(argv: list[str]) -> int:
         conf_video = dict(cfg["video"], resolucion=conf_flow.get("resolucion", "1080p"),
                           texto_gancho=conf_flow.get("texto_gancho", True))
         video = editar.unir(locales, idea.get("gancho"), conf_video, CARPETA_SALIDA / f"{idea['id']}.mp4")
+        if conf_flow.get("quitar_pausas", True):
+            _, n, seg = editar.quitar_pausas(video)
+            if n:
+                avisos.append(f"Se quitaron {n} pausas congeladas en los cortes ({seg:.1f} s).")
         duracion = editar.duracion(video)
     except Exception as e:
         traceback.print_exc()

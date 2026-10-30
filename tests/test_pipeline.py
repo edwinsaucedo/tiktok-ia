@@ -9,6 +9,7 @@ import json
 import os
 import shutil
 import tempfile
+import subprocess
 import threading
 import unittest
 from pathlib import Path
@@ -357,3 +358,58 @@ class TestFlujoCompleto(_Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestPausas(unittest.TestCase):
+    """Las pausas congeladas en los cortes (al alargar en Flow) se recortan solas."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = Path(tempfile.mkdtemp())
+        cls.video = cls.tmp / "con-pausas.mp4"
+        # 3 s con movimiento + 1 s congelado + 3 s + 0.8 s congelado + 3 s = 10.8 s, con audio continuo
+        filtro = ("[0:v]trim=0:3,setpts=PTS-STARTPTS,tpad=stop_mode=clone:stop_duration=1[a];"
+                  "[0:v]trim=3:6,setpts=PTS-STARTPTS,tpad=stop_mode=clone:stop_duration=0.8[b];"
+                  "[0:v]trim=6:9,setpts=PTS-STARTPTS[c];[a][b][c]concat=n=3:v=1:a=0[v]")
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error",
+                        "-f", "lavfi", "-i", "testsrc2=size=360x640:rate=24:duration=9",
+                        "-f", "lavfi", "-i", "sine=frequency=440:duration=10.8",
+                        "-filter_complex", filtro, "-map", "[v]", "-map", "1:a",
+                        "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p", "-c:a", "aac",
+                        "-shortest", str(cls.video)], check=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def _copia(self, nombre):
+        destino = self.tmp / nombre
+        shutil.copy(self.video, destino)
+        return destino
+
+    def test_detecta_las_dos_pausas(self):
+        pausas = editar.detectar_congelados(self.video)
+        self.assertEqual(len(pausas), 2)
+        self.assertAlmostEqual(pausas[0][0], 3.0, delta=0.15)
+        self.assertAlmostEqual(pausas[0][1] - pausas[0][0], 1.0, delta=0.15)
+
+    def test_quita_pausas_y_conserva_audio(self):
+        v = self._copia("a.mp4")
+        _, n, seg = editar.quitar_pausas(v, minimo_total=0)
+        self.assertEqual(n, 2)
+        self.assertAlmostEqual(seg, 1.56, delta=0.25)
+        self.assertAlmostEqual(editar.duracion(v), 10.8 - seg, delta=0.2)
+        self.assertTrue(editar.tiene_audio(v))
+        self.assertEqual(editar.detectar_congelados(v), [])
+
+    def test_no_baja_del_minimo(self):
+        v = self._copia("b.mp4")
+        _, n, seg = editar.quitar_pausas(v, minimo_total=10.5)
+        self.assertLessEqual(seg, 0.31)
+        self.assertGreaterEqual(editar.duracion(v), 10.4)
+
+    def test_video_corto_no_se_toca(self):
+        v = self._copia("c.mp4")
+        antes = v.read_bytes()
+        self.assertEqual(editar.quitar_pausas(v, minimo_total=61)[1], 0)
+        self.assertEqual(v.read_bytes(), antes)
