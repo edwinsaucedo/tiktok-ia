@@ -139,8 +139,10 @@ Tema de la cuenta: {tema}
 Crea UNA idea de video original de {n} escenas de {seg} segundos cada una (video vertical 9:16).
 Reglas:
 - "escenas": {n} prompts para un generador de video (Veo). Cada uno describe en inglés lo visual
-  (sujeto, acción, lugar, cámara, luz). Si alguien habla, escribe el diálogo entre comillas en
-  español de México, máximo 15 palabras por escena.
+  (sujeto, acción, lugar, cámara, luz) y repite la descripción completa de cada personaje (edad,
+  cabello, ropa). Todas las escenas pasan en el mismo lugar y cada una continúa justo donde
+  terminó la anterior. Si alguien habla, escribe el diálogo entre comillas en español de México,
+  máximo 15 palabras por escena.
 - "estilo": una frase en inglés con el estilo visual común a todas las escenas.
 - "gancho": texto corto en español (máximo 45 caracteres) para mostrar en pantalla al inicio.
 - "caption": descripción en español para TikTok, máximo 150 caracteres más 3 a 5 hashtags.

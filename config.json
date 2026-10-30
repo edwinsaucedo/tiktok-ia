@@ -1,14 +1,15 @@
 {
   "_ayuda": "Ajustes del pipeline. Lee la sección 'Ajustes' del README antes de cambiar algo.",
 
-  "tema_cuenta": "PENDIENTE: escribe aquí de qué trata tu cuenta de TikTok",
+  "tema_cuenta": "Mini-novelas en español de México: historias dramáticas cortas tipo telenovela (amor, traiciones, secretos de familia, venganzas, giros inesperados). Cada video es una historia completa en 3 escenas: planteamiento, conflicto y giro final que deja con ganas de más.",
 
   "video": {
     "modelos": ["veo-3.1-lite-generate-001", "veo-3.1-fast-generate-001"],
     "region": "us-central1",
-    "resolucion": "1080p",
+    "resolucion": "720p",
     "segundos_por_clip": 8,
-    "max_clips_por_video": 1,
+    "max_clips_por_video": 3,
+    "continuidad": true,
     "audio": true,
     "idioma_audio": "español de México",
     "prompt_negativo": "texto en pantalla, subtítulos, letras, marcas de agua, logotipos, interfaz de usuario",

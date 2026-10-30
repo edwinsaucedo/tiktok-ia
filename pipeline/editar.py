@@ -104,7 +104,7 @@ def unir(clips: list[Path], gancho: str | None, conf_video: dict, destino: Path)
     gancho = (gancho or "").strip()
     usar_gancho = bool(gancho) and conf_video.get("texto_gancho", True)
     if usar_gancho:
-        archivo_texto.write_text(textwrap.fill(gancho, width=20), encoding="utf-8")
+        archivo_texto.write_text(textwrap.fill(gancho, width=22), encoding="utf-8")
         segundos = float(conf_video.get("segundos_texto_gancho", 3))
         filtro = _filtro_gancho(archivo_texto, ancho, segundos, centrar=True)
 

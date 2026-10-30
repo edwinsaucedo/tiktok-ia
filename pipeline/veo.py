@@ -86,8 +86,25 @@ def _es_error_temporal(e: Exception) -> bool:
                                     "deadline", "timeout", "500", "internal"))
 
 
-def _generar_un_clip(client, modelo: str, prompt: str, conf: dict, destino: Path) -> None:
+def ultimo_cuadro(clip: Path, destino: Path) -> Path:
+    """Extrae el último cuadro del clip (PNG) para que la siguiente escena arranque desde ahí."""
+    subprocess.run(
+        ["ffmpeg", "-y", "-loglevel", "error", "-sseof", "-0.25", "-i", str(clip),
+         "-frames:v", "1", "-update", "1", str(destino)],
+        check=True,
+    )
+    if not destino.exists() or destino.stat().st_size == 0:
+        raise ErrorVeo(f"No se pudo extraer el último cuadro de {clip.name}")
+    return destino
+
+
+def _generar_un_clip(client, modelo: str, prompt: str, conf: dict, destino: Path,
+                     imagen_inicial: Path | None = None) -> None:
     from google.genai import types
+
+    imagen = None
+    if imagen_inicial is not None:
+        imagen = types.Image(image_bytes=imagen_inicial.read_bytes(), mime_type="image/png")
 
     config = types.GenerateVideosConfig(
         aspect_ratio="9:16",
@@ -98,7 +115,10 @@ def _generar_un_clip(client, modelo: str, prompt: str, conf: dict, destino: Path
         negative_prompt=conf.get("prompt_negativo") or None,
         person_generation=conf.get("generacion_personas") or None,
     )
-    op = client.models.generate_videos(model=modelo, prompt=prompt, config=config)
+    if imagen is not None:
+        op = client.models.generate_videos(model=modelo, prompt=prompt, image=imagen, config=config)
+    else:
+        op = client.models.generate_videos(model=modelo, prompt=prompt, config=config)
     inicio = time.monotonic()
     while not op.done:
         if time.monotonic() - inicio > TIMEOUT_CLIP:
@@ -153,10 +173,16 @@ def generar_clips(idea: dict, cfg: dict, carpeta: Path, proyecto: str | None,
         raise ErrorVeo("config.json no tiene modelos de video en video.modelos.")
     reintentos = max(0, int(conf.get("reintentos_por_clip", 2)))
     modelo_usado = modelos[0]
+    # Continuidad: la escena 2 en adelante arranca desde el último cuadro de la anterior,
+    # así los personajes y el lugar se mantienen iguales.
+    continuidad = bool(idea.get("continuidad", conf.get("continuidad", True)))
 
     for i, escena in enumerate(escenas, start=1):
         destino = carpeta / f"clip_{i:02d}.mp4"
         prompt = armar_prompt(escena, idea, conf)
+        imagen_inicial = None
+        if continuidad and clips:
+            imagen_inicial = ultimo_cuadro(clips[-1], carpeta / f"cuadro_{i - 1:02d}.png")
         hecho = False
         ultimo_error: Exception | None = None
         while modelos and not hecho:
@@ -164,7 +190,7 @@ def generar_clips(idea: dict, cfg: dict, carpeta: Path, proyecto: str | None,
             for intento in range(reintentos + 1):
                 try:
                     log(f"Escena {i}/{len(escenas)} con {modelo} (intento {intento + 1})…")
-                    _generar_un_clip(client, modelo, prompt, conf, destino)
+                    _generar_un_clip(client, modelo, prompt, conf, destino, imagen_inicial)
                     log(f"  ✓ clip {i} listo ({destino.stat().st_size / 1e6:.1f} MB)")
                     modelo_usado = modelo
                     hecho = True

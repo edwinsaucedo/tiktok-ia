@@ -1,10 +1,12 @@
 # TikTok IA – videos automáticos con Veo
 
-Este repositorio hace esto solo, **lunes, miércoles y viernes a las 9:17 a. m.** (hora del centro de México):
+Mini-novelas para TikTok: historias dramáticas de 24 segundos en 3 escenas (planteamiento, conflicto y giro final), con diálogo en español de México.
 
-1. Toma la siguiente idea de `ideas/cola/` (las ideas las escribe Claude cada semana).
-2. Genera el video vertical 9:16 con **Veo 3.1** (el mismo modelo que usa Flow) en Google Cloud.
-3. Le pone el texto gancho en pantalla los primeros 3 segundos.
+Este repositorio hace esto solo, **martes y viernes a las 9:17 a. m.** (hora del centro de México):
+
+1. Toma la siguiente historia de `ideas/cola/` (las escribe Claude cada semana).
+2. Genera las 3 escenas verticales 9:16 con **Veo 3.1** (el mismo modelo que usa Flow) en Google Cloud. La escena 2 arranca desde el último cuadro de la 1, y la 3 desde el último de la 2, para que los personajes y el lugar se vean iguales.
+3. Une las escenas y pone el texto gancho en pantalla los primeros 3 segundos.
 4. Lo manda a tu TikTok como **borrador**: te llega una notificación en la app.
 5. Te abre un *issue* en GitHub con el caption listo para copiar (te llega notificación al correo y a la app de GitHub).
 
@@ -14,14 +16,15 @@ Tú solo abres TikTok, pegas el caption, activas la etiqueta de IA y publicas.
 
 ## Cuánto cuesta
 
-Con la configuración inicial: **1 clip de 8 s, Veo 3.1 Lite en 1080p ($0.08 USD por segundo), 3 videos por semana.**
+Con la configuración inicial: **3 escenas de 8 s (24 s), Veo 3.1 Lite en 720p ($0.05 USD por segundo), martes y viernes.**
 
 | Configuración | Costo por video | Videos al mes | Costo al mes |
 |---|---|---|---|
-| **Inicial**: 1 clip, Lite 1080p, L-M-V | $0.64 | ~13 | **~$8.30** (lo cubren tus $10 de AI Pro) |
-| 1 clip, Lite 1080p, diario | $0.64 | ~30 | ~$19.20 |
-| 3 clips (24 s), Lite 1080p, L-M-V | $1.92 | ~13 | ~$25.00 |
-| 1 clip, Fast 1080p ($0.12/s), L-M-V | $0.96 | ~13 | ~$12.50 |
+| **Inicial**: 3 escenas, Lite 720p, martes y viernes | $1.20 | 8 (el tope corta el 9.º) | **$9.60** (lo cubren tus $10 de AI Pro) |
+| 3 escenas, Lite 720p, lunes, miércoles y viernes | $1.20 | ~13 | ~$15.60 |
+| 3 escenas, Lite 1080p ($0.08/s), martes y viernes | $1.92 | ~9 | ~$16.70 |
+| 3 escenas, Fast 1080p ($0.12/s), martes y viernes | $2.88 | ~9 | ~$25.00 |
+| 8 escenas (64 s, mínimo para Recompensas), Lite 720p, martes y viernes | $3.20 | ~9 | ~$27.80 |
 
 Precios de referencia de la API de Veo 3.1; Google cobra lo que diga su página de precios. Además hay un **tope de $10 USD al mes** en `config.json` (`presupuesto.tope_mensual_usd`): si el siguiente video lo rebasa, no se genera y te avisa. GitHub Actions es gratis para este uso.
 
@@ -100,8 +103,8 @@ Después, en `config.json`, cambia `"tema_cuenta"` por el tema de tu cuenta (Cla
 ### Paso 7. Pruebas
 
 1. **Prueba gratis de TikTok:** pestaña **Actions** → **Video diario para TikTok** → **Run workflow** → marca **Simular** y deja marcado **Mandar a TikTok** → Run. En 2–3 minutos te llega a TikTok un borrador con barras de colores (bórralo) y un issue en GitHub.
-2. **Primer video real:** Run workflow **sin** marcar Simular. Tarda 3–8 minutos y gasta ~$0.64 USD.
-3. Listo: desde aquí corre solo lunes, miércoles y viernes.
+2. **Primer video real:** Run workflow **sin** marcar Simular. Tarda 5–15 minutos y gasta ~$1.20 USD.
+3. Listo: desde aquí corre solo martes y viernes.
 
 ---
 
@@ -129,10 +132,20 @@ Formato de una idea:
   "titulo": "Título interno",
   "gancho": "Texto en pantalla (máx. ~45 caracteres)",
   "estilo": "Visual style shared by all scenes, in English",
-  "escenas": ["Prompt de la escena 1 en inglés; diálogo entre comillas en español"],
-  "caption": "Descripción para TikTok #hashtag1 #hashtag2"
+  "escenas": [
+    "Escena 1 en inglés: personajes descritos completos, acción, cámara; diálogo entre comillas en español",
+    "Escena 2: continúa justo donde terminó la 1",
+    "Escena 3: el giro final"
+  ],
+  "caption": "Descripción para TikTok #hashtag1 #hashtag2",
+  "continuidad": true
 }
 ```
+
+Consejos para que las historias salgan bien con Veo:
+- Cada escena repite la descripción de los personajes (edad, ropa, cabello) aunque ya salieran antes.
+- Con `"continuidad": true`, cada escena empieza en el último cuadro de la anterior: escribe la escena como continuación del mismo lugar y momento. Si la historia necesita un salto de lugar o tiempo, pon `"continuidad": false` en esa idea.
+- Diálogos cortos: máximo ~15 palabras por escena para que quepan en 8 segundos.
 
 ## Ajustes (`config.json`)
 
@@ -141,7 +154,8 @@ Formato de una idea:
 | `tema_cuenta` | Tema de tu cuenta (lo usan las ideas) |
 | `video.modelos` | Orden de modelos de Veo; si el primero no está disponible, usa el siguiente |
 | `video.resolucion` | `1080p` o `720p` (720p cuesta menos con Lite: $0.05/s) |
-| `video.max_clips_por_video` | Clips de 8 s por video (1 = 8 s, 3 = 24 s, 8 = 64 s para el programa de Recompensas) |
+| `video.max_clips_por_video` | Escenas de 8 s por video (3 = 24 s; 8 = 64 s, lo mínimo para el programa de Recompensas) |
+| `video.continuidad` | Cada escena arranca del último cuadro de la anterior (personajes consistentes) |
 | `video.texto_gancho` | `true`/`false` para el texto en pantalla |
 | `presupuesto.tope_mensual_usd` | Tope de gasto estimado al mes |
 | `tiktok.subir` | `false` para solo generar el video sin mandarlo a TikTok |
@@ -167,6 +181,7 @@ Hay que mandar la app a revisión de TikTok (tarda de varios días a 2 semanas):
 | `PERMISSION_DENIED` de Google | Revisa que la cuenta de servicio tenga el rol *Usuario de Vertex AI* y que Vertex AI API esté habilitada |
 | No te deja crear la clave JSON | Tu cuenta tiene una política que bloquea claves; avísale a Claude para cambiar a *Workload Identity Federation* |
 | `bloqueado por filtros de seguridad` | Veo rechazó el prompt; la idea se reintenta una vez y luego sale de la cola |
+| Falla siempre en la escena 2 (con imagen inicial) | Tu región o proyecto no permite imagen→video con personas: pon `"continuidad": false` en `config.json` |
 | `Tope de gasto del mes alcanzado` | Sube `presupuesto.tope_mensual_usd` o espera al día 1 |
 | El workflow dejó de correr solo | GitHub pausa los cron tras 60 días sin actividad en el repo; entra a Actions y reactívalo |
 

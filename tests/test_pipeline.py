@@ -152,12 +152,20 @@ class TestIdeas(unittest.TestCase):
 class TestVeoConFalso(unittest.TestCase):
     """Comprueba que usamos bien el SDK de Google con objetos reales de google.genai.types."""
 
+    @classmethod
+    def setUpClass(cls):
+        tmp = Path(tempfile.mkdtemp())
+        veo._clip_simulado(tmp / "real.mp4", 1, 1)
+        cls.bytes_mp4 = (tmp / "real.mp4").read_bytes()
+        shutil.rmtree(tmp)
+
     def _cliente(self, falla_primero: str | None = None):
         llamadas = []
+        bytes_mp4 = self.bytes_mp4
 
         class Modelos:
-            def generate_videos(self_inner, model, prompt, config):
-                llamadas.append((model, prompt, config))
+            def generate_videos(self_inner, model, prompt, config, image=None):
+                llamadas.append((model, prompt, config, image))
                 if falla_primero and model == falla_primero:
                     raise RuntimeError("404 NOT_FOUND: Publisher model not found")
                 return types.GenerateVideosOperation(name="op/1", done=False)
@@ -167,7 +175,7 @@ class TestVeoConFalso(unittest.TestCase):
                 return types.GenerateVideosOperation(
                     name="op/1", done=True,
                     response=types.GenerateVideosResponse(generated_videos=[
-                        types.GeneratedVideo(video=types.Video(video_bytes=b"\x00" * 20_000,
+                        types.GeneratedVideo(video=types.Video(video_bytes=bytes_mp4,
                                                                mime_type="video/mp4"))]))
 
         cliente = mock.Mock()
@@ -188,12 +196,29 @@ class TestVeoConFalso(unittest.TestCase):
         self.assertEqual(len(res.clips), 2)
         self.assertEqual(res.modelo, cfg["video"]["modelos"][1])
         self.assertTrue(res.avisos)
-        modelo, prompt, config = llamadas[-1]
+        modelo, prompt, config, imagen = llamadas[-1]
         self.assertIn("warm cinematic", prompt)
         self.assertEqual(config.aspect_ratio, "9:16")
         self.assertEqual(config.duration_seconds, 8)
-        self.assertEqual(config.resolution, "1080p")
+        self.assertEqual(config.resolution, cfg["video"]["resolucion"])
         self.assertTrue(config.generate_audio)
+        # continuidad: la 2a escena arranca desde el último cuadro (PNG) de la 1a
+        self.assertIsNone(llamadas[1][3])
+        self.assertIsInstance(imagen, types.Image)
+        self.assertEqual(imagen.mime_type, "image/png")
+        self.assertTrue(imagen.image_bytes.startswith(b"\x89PNG"))
+        shutil.rmtree(tmp)
+
+    def test_sin_continuidad_no_manda_imagen(self):
+        cfg = cargar_config()
+        cfg["video"]["max_clips_por_video"] = 2
+        cliente, llamadas = self._cliente()
+        idea = {"id": "x", "escenas": ["a", "b"], "caption": "c", "continuidad": False}
+        tmp = Path(tempfile.mkdtemp())
+        with mock.patch("google.genai.Client", return_value=cliente), \
+                mock.patch.object(veo, "ESPERA_SONDEO", 0):
+            veo.generar_clips(idea, cfg, tmp, "p", simular=False)
+        self.assertTrue(all(ll[3] is None for ll in llamadas))
         shutil.rmtree(tmp)
 
     def test_filtro_de_seguridad_da_error_claro(self):
@@ -258,7 +283,8 @@ class TestFlujoCompleto(_Base):
         hecha = json.loads(next(self.hechas.glob("*.json")).read_text())
         self.assertEqual(hecha["resultado"]["estado"], "borrador_en_tiktok")
         self.assertEqual(hecha["resultado"]["publish_id"], "v_inbox_file~v2.123")
-        self.assertEqual(hecha["resultado"]["costo_estimado_usd"], 1.28)  # 16 s x $0.08
+        precio = self.cfg["precios_usd_por_segundo"]["veo-3.1-lite-generate-001"][self.cfg["video"]["resolucion"]]
+        self.assertEqual(hecha["resultado"]["costo_estimado_usd"], round(16 * precio, 2))
         self.assertEqual((self.salida / "nuevo_refresh_token.txt").read_text(), "rft.rotado")
         aviso = (self.salida / "aviso.md").read_text()
         self.assertIn("Hola #prueba", aviso)
@@ -297,8 +323,11 @@ class TestFlujoCompleto(_Base):
         self.assertEqual(len(list(self.cola.glob("*.json"))), 1)  # la idea sigue esperando
         self.assertNotIn("init", _TikTokFalso.estado)
 
-    def test_config_de_entrega_es_un_clip(self):
-        self.assertEqual(cargar_config()["video"]["max_clips_por_video"], 1)
+    def test_config_de_entrega_cabe_en_el_tope(self):
+        cfg = cargar_config()
+        v = cfg["video"]
+        costo = veo.costo_estimado(cfg, v["modelos"][0], v["segundos_por_clip"] * v["max_clips_por_video"])
+        self.assertLessEqual(costo * 8, cfg["presupuesto"]["tope_mensual_usd"])  # 8 videos al mes
 
     def test_idea_invalida_sale_de_la_cola(self):
         (self.cola / "0-mala.json").write_text('{"id": "mala"}', encoding="utf-8")

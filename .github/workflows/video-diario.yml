@@ -2,9 +2,9 @@ name: Video diario para TikTok
 
 on:
   schedule:
-    # Lunes, miércoles y viernes a las 15:17 UTC = 9:17 a. m. hora del centro de México (UTC-6).
-    # Para todos los días usa "17 15 * * *" (revisa el costo en el README antes).
-    - cron: "17 15 * * 1,3,5"
+    # Martes y viernes a las 15:17 UTC = 9:17 a. m. hora del centro de México (UTC-6).
+    # Para lunes, miércoles y viernes usa "17 15 * * 1,3,5" (revisa el costo en el README antes).
+    - cron: "17 15 * * 2,5"
   workflow_dispatch:
     inputs:
       simular:
