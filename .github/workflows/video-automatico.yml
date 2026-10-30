@@ -51,6 +51,8 @@ jobs:
     if: ${{ needs.verificar.outputs.listo == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    env:
+      TIENE_GCP: ${{ secrets.GCP_SA_KEY != '' }}
     steps:
       - name: Descargar el repositorio
         uses: actions/checkout@v4
@@ -68,7 +70,8 @@ jobs:
           pip install -q -r requirements.txt
 
       - name: Conectar con Google Cloud
-        if: ${{ inputs.simular != true }}
+        # Solo hace falta para generar con Veo; en simulación o sin llave de Google se salta.
+        if: ${{ inputs.simular != true && env.TIENE_GCP == 'true' }}
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}

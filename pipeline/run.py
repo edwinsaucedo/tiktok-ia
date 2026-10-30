@@ -45,7 +45,8 @@ def main() -> int:
     url = _url_ejecucion()
 
     if not simular and not cfg.get("modo_automatico", {}).get("activo", True):
-        log("El modo automático está apagado (config.json → modo_automatico.activo = false). No se hace nada.")
+        aviso_github("notice", "El modo automático está apagado (config.json → modo_automatico.activo = false), "
+                     "así que no se generó video. Para probar la subida a TikTok marca la casilla 'Simular'.")
         return 0
 
     if CARPETA_SALIDA.exists():
