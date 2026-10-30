@@ -25,7 +25,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verificar:
+    # Si aún no configuras los secretos, las ejecuciones programadas se saltan sin marcar error.
+    runs-on: ubuntu-24.04
+    outputs:
+      listo: ${{ steps.revisar.outputs.listo }}
+    steps:
+      - name: Revisar que existan los secretos
+        id: revisar
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
+          TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+          EVENTO: ${{ github.event_name }}
+        run: |
+          if [ "$EVENTO" = "workflow_dispatch" ] || { [ -n "$GCP_SA_KEY" ] && [ -n "$GCP_PROJECT" ] && [ -n "$TIKTOK_REFRESH_TOKEN" ]; }; then
+            echo "listo=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "listo=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Faltan secretos (README, paso 6). Hoy no se genera video."
+          fi
+
   video:
+    needs: verificar
+    if: ${{ needs.verificar.outputs.listo == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
