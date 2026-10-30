@@ -51,7 +51,7 @@ def refrescar_tokens(client_key: str, client_secret: str, refresh_token: str) ->
         raise ErrorTikTok(
             "No se pudo renovar el acceso a TikTok "
             f"({datos.get('error')}: {datos.get('error_description')}). "
-            "Si el refresh token caducó o lo revocaste, vuelve a correr tools/tiktok_login.py."
+            "Si el refresh token caducó o lo revocaste, vuelve a correr el workflow 'Conectar TikTok'."
         )
     ocultar_en_log(datos["access_token"])
     ocultar_en_log(datos.get("refresh_token", ""))
@@ -59,7 +59,7 @@ def refrescar_tokens(client_key: str, client_secret: str, refresh_token: str) ->
     if scope and "video.upload" not in scope:
         raise ErrorTikTok(
             f"El token no tiene el permiso video.upload (tiene: {scope}). "
-            "Agrega Content Posting API a tu app y vuelve a correr tools/tiktok_login.py."
+            "Agrega Content Posting API a tu app y vuelve a correr el workflow 'Conectar TikTok'."
         )
     return Tokens(
         access_token=datos["access_token"],
@@ -108,7 +108,7 @@ def _revisar(datos: dict, accion: str) -> dict:
         pistas = {
             "spam_risk_too_many_pending_share": "Tienes demasiados borradores pendientes en TikTok "
             "(máximo 5). Publica o borra algunos desde la app.",
-            "scope_not_authorized": "Falta el permiso video.upload; vuelve a correr tools/tiktok_login.py.",
+            "scope_not_authorized": "Falta el permiso video.upload; vuelve a correr el workflow 'Conectar TikTok'.",
             "access_token_invalid": "El token de acceso no es válido; revisa TIKTOK_REFRESH_TOKEN.",
             "rate_limit_exceeded": "Demasiadas peticiones; se reintentará en la próxima ejecución.",
         }

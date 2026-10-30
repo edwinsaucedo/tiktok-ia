@@ -43,7 +43,7 @@ jobs:
             echo "listo=true" >> "$GITHUB_OUTPUT"
           else
             echo "listo=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Faltan secretos (README, paso 6). Hoy no se genera video."
+            echo "::notice::Faltan secretos (README, paso 5). Hoy no se genera video."
           fi
 
   video:
@@ -91,7 +91,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
-            echo "::warning::TikTok entregó un refresh token nuevo pero no hay secreto GH_PAT para guardarlo. Revisa el paso 5 del README."
+            echo "::warning::TikTok entregó un refresh token nuevo pero no hay secreto GH_PAT para guardarlo. Revisa el paso 4 del README."
           else
             gh secret set TIKTOK_REFRESH_TOKEN --repo "$GITHUB_REPOSITORY" < salida/nuevo_refresh_token.txt
             echo "Refresh token actualizado."

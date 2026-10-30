@@ -302,7 +302,7 @@ class TestFlujoCompleto(_Base):
         hecha = json.loads(next(self.hechas.glob("*.json")).read_text())
         self.assertEqual(hecha["resultado"]["estado"], "generado_sin_subir")
         self.assertTrue(list(self.salida.glob("*.mp4")))
-        self.assertIn("tiktok_login.py", (self.salida / "aviso.md").read_text())
+        self.assertIn("Conectar TikTok", (self.salida / "aviso.md").read_text())
 
     def test_cola_vacia_sin_respaldo(self):
         with mock.patch.dict(os.environ, {"GCP_PROJECT": ""}):

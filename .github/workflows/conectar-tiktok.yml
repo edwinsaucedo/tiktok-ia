@@ -1,0 +1,38 @@
+name: Conectar TikTok
+
+on:
+  workflow_dispatch:
+    inputs:
+      url_de_regreso:
+        description: "1ª vez: déjalo VACÍO. 2ª vez: pega la dirección completa http://localhost:8765/callback/?code=..."
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  conectar:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install -q requests
+
+      - name: Conectar la cuenta
+        env:
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          TIKTOK_PKCE: ${{ secrets.TIKTOK_PKCE }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          URL_REGRESO: ${{ inputs.url_de_regreso }}
+        run: python tools/conectar_tiktok.py

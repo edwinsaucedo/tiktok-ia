@@ -83,26 +83,14 @@ Si la carpeta queda con **⚠️** (no llegó a TikTok) o **❌** (archivo daña
 
 > La primera prueba (Paso 9) dirá si los borradores de sandbox se pueden publicar normalmente. Si no, usa el **Plan B** de abajo.
 
-### Paso 4. Conectar tu cuenta de TikTok (en tu computadora)
-
-1. Instala Python 3.12 desde <https://www.python.org/downloads/> (marca **Add python.exe to PATH**).
-2. Descarga este repositorio: **Code** → **Download ZIP** → descomprímelo.
-3. En esa carpeta abre una terminal (clic derecho → *Abrir en Terminal*):
-   ```
-   py -m pip install requests
-   py tools\tiktok_login.py
-   ```
-4. Pega el Client key y Client secret de la sandbox → autoriza en el navegador.
-5. Copia el **refresh token** que aparece: va en el secreto `TIKTOK_REFRESH_TOKEN` (dura 365 días y se renueva solo).
-
-### Paso 5. Token de GitHub para renovar el acceso de TikTok
+### Paso 4. Token de GitHub (lo usan "Conectar TikTok" y la renovación del acceso)
 
 1. <https://github.com/settings/personal-access-tokens> → **Generate new token** (fine-grained).
 2. Nombre `tiktok-ia`, expiración **1 año**, *Only select repositories* → `tiktok-ia`.
 3. *Repository permissions* → **Secrets: Read and write**.
 4. Copia el token: va en el secreto `GH_PAT`.
 
-### Paso 6. Guardar los secretos en GitHub
+### Paso 5. Guardar los secretos en GitHub
 
 Repositorio → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**:
 
@@ -112,8 +100,19 @@ Repositorio → **Settings** → **Secrets and variables** → **Actions** → *
 | `GCP_SA_KEY` | Todo el contenido del `.json` de la cuenta de servicio (Paso 1.5) |
 | `TIKTOK_CLIENT_KEY` | Client key de la sandbox (Paso 3.5) |
 | `TIKTOK_CLIENT_SECRET` | Client secret de la sandbox (Paso 3.5) |
-| `TIKTOK_REFRESH_TOKEN` | Refresh token (Paso 4.5) |
-| `GH_PAT` | Token de GitHub (Paso 5) |
+| `GH_PAT` | Token de GitHub (Paso 4) |
+
+`TIKTOK_REFRESH_TOKEN` no lo creas tú: lo guarda solo el Paso 6.
+
+### Paso 6. Conectar tu cuenta de TikTok (sin instalar nada)
+
+1. **Actions** → **Conectar TikTok** → **Run workflow** → deja el campo **vacío** → Run.
+2. Abre la ejecución cuando termine (≈30 s): en el resumen aparece una **dirección de TikTok**. Ábrela, inicia sesión con tu cuenta del canal (la de *Target users*) y **autoriza**.
+3. El navegador te manda a `http://localhost:8765/callback/?code=…` y dice que **no puede conectar**: es normal. **Copia esa dirección completa** de la barra.
+4. En menos de 5 minutos: **Run workflow** otra vez → **pega la dirección** en el campo → Run.
+5. Debe terminar en verde con "Cuenta de TikTok conectada ✅". El token quedó en el secreto `TIKTOK_REFRESH_TOKEN` (dura 365 días y se renueva solo).
+
+> Alternativa en tu computadora: con Python instalado, `py -m pip install requests` y `py tools\tiktok_login.py` te da el refresh token para guardarlo a mano.
 
 ### Paso 7. (Ya está hecho) Carpeta de Drive
 
@@ -187,7 +186,7 @@ Horarios: línea `cron` de cada workflow en `.github/workflows/` (en UTC: hora d
 1. Las páginas ya están publicadas: https://emstudiodigital.com/tiktok-ia/terminos.html y https://emstudiodigital.com/tiktok-ia/privacidad.html (archivos en `web/`).
 2. En la app (Production): ícono, descripción, categoría y esas dos URLs.
 3. Graba un video corto de pantalla del flujo (`tiktok_login.py`, autorizar, borrador llegando a TikTok).
-4. **Submit for review** (de varios días a 2 semanas). Al aprobarse, corre otra vez `tiktok_login.py` con las credenciales **de producción** y actualiza `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` y `TIKTOK_REFRESH_TOKEN`.
+4. **Submit for review** (de varios días a 2 semanas). Al aprobarse, cambia `TIKTOK_CLIENT_KEY` y `TIKTOK_CLIENT_SECRET` por los **de producción** y corre otra vez **Conectar TikTok**.
 
 ## Problemas comunes
 
@@ -195,7 +194,7 @@ Horarios: línea `cron` de cada workflow en `.github/workflows/` (en UTC: hora d
 |---|---|
 | `Drive no encuentra la carpeta` / `no dejó renombrar` | Falta el Paso 8 (compartir **TikTok IA** como Editor con la cuenta de servicio) o el Paso 1.4 (Google Drive API) |
 | Subí el video y no pasa nada | Espera: toma videos con 10 min sin cambios y revisa cada hora de 7 a. m. a 11 p. m. O corre el workflow a mano |
-| `No se pudo renovar el acceso a TikTok (invalid_grant…)` | Corre otra vez `tools/tiktok_login.py` y actualiza `TIKTOK_REFRESH_TOKEN` |
+| `No se pudo renovar el acceso a TikTok (invalid_grant…)` | Corre otra vez el workflow **Conectar TikTok** (Paso 6) |
 | `spam_risk_too_many_pending_share` | Tienes 5 borradores sin publicar en TikTok |
 | `El video venía horizontal` | En Flow elige formato 9:16 antes de generar |
 | `PERMISSION_DENIED` de Vertex AI | Rol *Usuario de Vertex AI* en la cuenta de servicio y Vertex AI API habilitada |
